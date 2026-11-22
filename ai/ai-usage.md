@@ -2,6 +2,10 @@ This is the repository master AI provenance record, not a roll-up index.
 
 # AI usage
 
+## Window reference
+
+The contributor citation for the three-scale window criterion was checked against the deposited version 1.0.4 and its tagged Lean source. The declaration at line 114 transfers the pole data. The declaration at line 176 proves the zero-free conclusion for the same positive character family from a one-sided upper bound on arbitrarily late windows. The multiplier is nonzero in the open critical strip and positive on its real interval, so it preserves the signs of the real residues. [Deposited version](https://doi.org/10.5281/zenodo.24410863) [Pole data](https://github.com/leecrossley/dirichlet-window-transfer/blob/fa94718cf9d65ee5b143ded4c91dc3873222cfdf/DelayedPole.lean#L114) [Window theorem](https://github.com/leecrossley/dirichlet-window-transfer/blob/fa94718cf9d65ee5b143ded4c91dc3873222cfdf/DelayedPole.lean#L176)
+
 <!-- task-entry-begin: 2026-11-21T21:22:13-05:00__session__gamma-kernel-correction -->
 ## 2026-11-21T21:22:13-05:00 — session/gamma-kernel-correction
 [id: 2026-11-21T21:22:13-05:00__session__gamma-kernel-correction]
