@@ -1,8 +1,7 @@
 # Notes on the Riemann Hypothesis
 
 AI-generated notes, printed by Taylor Dupuy. They are temporary reading aids for
-Levent Alpöge's Lean proof of the Riemann Hypothesis and GRH for Dirichlet
-(L)-functions. They are not an independent verification of the mathematics.
+Levent Alpöge's Lean proof of the Riemann Hypothesis and GRH for Dirichlet L-functions. They are not an independent verification of the mathematics.
 Updated 27 November 2026.
 
 ## Proof versions and verification
