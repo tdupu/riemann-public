@@ -1,0 +1,987 @@
+% >>> [agent-codex 2026-11-27 compact-book]
+\documentclass[11pt,oneside,openany]{amsbook}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs,array,longtable}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\emergencystretch=4em
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{question}[theorem]{Question}
+\newtheorem{example}[theorem]{Example}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\renewcommand{\thesection}{\thechapter.\arabic{section}}
+\numberwithin{equation}{section}
+
+\newcommand{\C}{\mathbb C}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\R}{\mathbb R}
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\Lam}{\Lambda}
+\newcommand{\re}{\operatorname{Re}}
+\newcommand{\covol}{\operatorname{covol}}
+\newcommand{\Sha}{\operatorname{Sha}}
+\newcommand{\todo}[1]{\textcolor{red}{[todo: #1]}}
+\newcommand{\taylor}[1]{\textcolor{blue}{[Taylor: #1]}}
+\newcommand{\agentreply}[1]{\textcolor{gray}{[agent: #1]}}
+\newcommand{\ghroot}{https://github.com/lsernau/grh-lean/blob/}
+\newcommand{\ghrev}{72fead102f663d5c7a407964a13dc0cf9d977207}
+\newcommand{\leanfile}[2]{%
+  \href{\ghroot\ghrev/grh-compact/src/#1}{\nolinkurl{#2}}}
+
+\begin{document}
+\begin{abstract}
+This manuscript traces the compact Lean formalization of the
+Riemann hypothesis and Dirichlet GRH to a pinned source commit. It
+explains how bounded automorphic forms, nearly spanning families,
+and integral height bounds yield a one-sided weighted prime-error
+estimate; a positivity criterion then excludes zeros to the right
+of the critical line. The elementary comparison is proved here.
+The construction of the forms and the deep height estimates are
+stated with source locators and remain obligations for a human
+mathematical reading. The formal project has passed reported
+machine checks; this AI-drafted exposition has not been refereed.
+\end{abstract}
+\title{The Compact Lean Argument for Dirichlet GRH}
+\author{Prepared for Taylor Dupuy\\[2ex]
+  Working draft, 27 November 2026\\[1ex]
+  AI GENERATED --- MATHEMATICAL REVIEW IN PROGRESS}
+\date{27 November 2026}
+\maketitle
+\tableofcontents
+
+\chapter*{Introduction}
+Levent Alp\"oge announced a formal proof of the Riemann hypothesis
+and its Dirichlet $L$-function analogue on 20 November 2026
+\cite[pp.~1--4]{Alpoge2026}. Luke Sernau, colleagues at Anthropic,
+and Claude subsequently published a shorter Lean rewrite. Its compact
+edition has 794 Lean source files and 76,149 nonblank, noncomment
+lines in \texttt{src/}; the total is 112,827 lines. The readable
+edition has 803 files and 299,902 lines of code. Both prove the same
+five statements \cite[Summary]{Sutherland2026}.
+
+The reader should distinguish the formal result from this account.
+Sutherland reports completed kernel and independent checker runs for
+both editions \cite[Summary and What was verified]{Sutherland2026}.
+The authors of the compact edition state that no mathematician has
+read the proof through and that no paper accompanies it
+\cite[Status]{Sernau2026}. This manuscript explains the dependency
+structure and checks the elementary comparison in its final argument.
+It does not supply an independent proof of the deep inputs.
+
+The order follows the earlier lecture notes \cite[Chs.~1--3]{Dupuy2026}:
+the claimed theorem and an analogy, the entire argument assembled
+from named inputs, then the constructions that supply those inputs.
+The compact rewrite has different definitions and proof terms from
+the original archive, so the existing book cannot simply be relabeled
+as an explanation of this edition.
+
+\subsection*{Software and AI assistance}
+An OpenAI Codex desktop agent drafted this manuscript on
+27 November 2026 \cite[\href{https://openai.com/codex}{product
+page}]{OpenAICodex}. The runtime did not expose its exact model
+identifier. The agent was given the earlier AI-generated book and
+read the pinned compact Lean source and the original Alp\"oge note.
+Its explanation follows those sources; the comparison in
+Proposition~\ref{prop:comparison} unpacks the source's
+\texttt{star\_inequality}, rather than claiming a new result.
+The source search found no independent paper on the compact rewrite.
+Responsibility for any released version rests exclusively with its
+human author. No human has reviewed this draft's mathematical claims.
+
+\chapter{The target and the route}
+\label{ch:target}
+\section{Exactly what the Lean statements say}
+\label{sec:statements}
+The source file \leanfile{Statements.lean}{Statements.lean} imports
+only Mathlib. It fixes four propositions without reference to the
+proof's internal definitions. The first final theorem has Mathlib's
+type \texttt{RiemannHypothesis}; the other four have these types
+\cite[\texttt{src/Statements.lean} and
+\texttt{src/Main.lean}]{Sernau2026}.
+
+Write $L(s,\chi)$ for Mathlib's Dirichlet character $L$-function.
+The source quantifies over every positive modulus $N$ and every
+complex valued Dirichlet character modulo $N$. It asserts
+\begin{equation}
+\label{eq:nonvanishing}
+\re s>\tfrac12,\quad (\chi\ne1\text{ or }s\ne1)
+\quad\Longrightarrow\quad L(s,\chi)\ne0.
+\end{equation}
+For $0<\re s<1$, it also asserts that a zero of $L(s,\chi)$ has
+$\re s=\tfrac12$, both for arbitrary and for primitive characters.
+For the Riemann zeta function it states that every zero other than
+$-2,-4,-6,\ldots$ has real part $\tfrac12$; the formal predicate
+also excludes $s=1$, the pole.
+
+\begin{remark}
+\label{rem:scope}
+The Dirichlet statements do not discuss zeros with $\re s\le0$.
+The primitive-character theorem is a specialization of the theorem
+for all characters. The term ``GRH'' in this manuscript refers only
+to Dirichlet $L$-functions.
+\end{remark}
+
+\section{The analytic reduction}
+\label{sec:analytic-reduction}
+The central declaration is \texttt{New.grh} in
+\leanfile{New/Main.lean}{New/Main.lean}. It proves
+\eqref{eq:nonvanishing}. The functional equation then reflects a
+zero in $0<\re s<\tfrac12$ into $\re s>\tfrac12$; separate
+zeta identities treat the nontrivial zeta zeros. This is the route
+implemented in the final five declarations of
+\leanfile{Main.lean}{Main.lean}. The reduction is logically useful:
+the arithmetic construction only needs an upper bound on one side
+of a weighted prime count. No two-sided prime number theorem in
+progressions is assumed at the final step.
+
+\chapter{A function-field comparison}
+\label{ch:model}
+\section{Why a bound on primes can control zeros}
+The Stepanov--Bombieri argument for curves over finite fields counts
+points by placing a high-order vanishing condition on an auxiliary
+function. Its zero divisor and its pole divisor then constrain each
+other. A contradiction arises if the count exceeds the square-root
+error scale. The proof is developed in the earlier book
+\cite[Ch.~2]{Dupuy2026}. The present chapter uses that argument only
+as an analogy; it is not an input to the compact Lean derivation.
+
+The compact proof replaces a single auxiliary function by a family
+of automorphic forms and their theta lifts. The forms have an upper
+size bound. A global integrality and product-formula argument gives
+a lower bound for the same covolume. The excess between the bounds
+is a weighted prime sum. The comparison resembles a degree count
+in the function-field argument, although the objects and the
+estimates are substantially different.
+
+\begin{remark}
+\label{rem:analogy-limit}
+The estimate for a curve over $\mathbb F_q$ does not imply the
+arithmetic estimate used below. In the compact development the
+automorphic, Galois, $p$-adic, and height inputs are proved in Lean
+files under \texttt{src/New} and \texttt{src/Lib}; this chapter
+supplies none of those arguments.
+The earlier book shows that the number-field one-sided prime
+bound corresponds to a lower point-count bound, while the
+Stepanov--Bombieri argument gives an upper point-count bound
+\cite[Ch.~2, direction of the bound]{Dupuy2026}.
+Its alternative ``sign-only'' argument using $qN=M^k+R$
+is conditional on a hypothesis that fails for some values of
+$k$ in the simplest quadric cases
+\cite[Ch.~2, second hypothesis]{Dupuy2026}.
+Neither analogy supplies a missing step in Theorems A--C.
+\end{remark}
+
+\chapter{The argument assembled}
+\label{ch:assembly}
+\section{The data and the two bounds}
+Fix admissible parameters $P$ and data $D$ as in
+\leanfile{New/Data/DataExist.lean}{DataExist.lean}. The main scale is
+$x$, the later scale is $x_1$, the large auxiliary parameter is $b$,
+and $m$ is the number of theta lifts. Put
+\begin{equation}
+\label{eq:budget}
+f=\varphi(N_0)\,\#\mathrm{tops},\qquad
+\mathcal B=f a(\log b)^3,\qquad
+L=(\log b)\mathcal B.
+\end{equation}
+Here $a$ is the long order, $\mathrm{tops}$ is a set of infinite
+places, and $D_{\rm row}$ is the dimension of the row space.
+Write $h_0=m k\mathcal U$ for the main height term and
+$R$ for the remainder of the prime sum after its expected terms
+are removed. Chapter~\ref{ch:prime-error} gives $R$ explicitly.
+
+Theorems A and B of the compact source are respectively
+\texttt{Data.short\_forms} and \texttt{Data.enough\_forms} in
+\leanfile{New/Endgame/ShortAndEnough.lean}{ShortAndEnough.lean}.
+They give independent rows $y_1,\ldots,y_n$ with
+\begin{align}
+\label{eq:nearly-all}
+n&\ge(1-4/b^2)D_{\rm row},\\
+\label{eq:index}
+\delta&\le5D_{\rm row}\log(1+b^2)\mathcal B,
+\end{align}
+where $\delta$ controls the index of the integral lifts.
+For each complex embedding $\sigma$, their squared covolume obeys
+\begin{equation}
+\label{eq:upper-covolume}
+\covol_\sigma^2(\Theta_1 y_1,\ldots,\Theta_1 y_n)
+\le\exp\bigl(n(h_0-mR+L)\bigr).
+\end{equation}
+This exact combined output is
+\texttt{Data.exists\_family\_covolumeSq\_le} in
+\leanfile{New/Endgame/LongForms.lean}{LongForms.lean}.
+
+Theorem C is \texttt{Data.integral\_forms\_long} in the same file.
+For any independent nearly spanning family satisfying the index
+condition and a squared-covolume upper bound $e^V$, it gives
+\begin{equation}
+\label{eq:lower-covolume}
+D_{\rm row}(h_0-3L)\le V+2\delta.
+\end{equation}
+This is a lower bound for the logarithmic covolume, despite the
+declaration's name. Its proof uses the heights of twisted volume
+ratios and the nonnegativity of the height of $1$.
+
+\section{The cancellation}
+\label{sec:cancellation}
+The formal comparison appears as \texttt{star\_inequality} in
+\leanfile{New/Main.lean}{New/Main.lean}. The following calculation
+records its mathematical content. The source also proves the
+crude estimate $|h_0|+m|R|\le b^2x^{99}$.
+
+\begin{proposition}
+\label{prop:comparison}
+Let $D$ be admissible data satisfying
+\eqref{eq:nearly-all}--\eqref{eq:upper-covolume}, the lower bound
+\eqref{eq:lower-covolume}, and
+$|h_0|+m|R|\le b^2x^{99}$. Then
+\begin{equation}
+\label{eq:comparison-raw}
+mR\le4L+4x^{99}
+      +10\log(1+b^2)\mathcal B.
+\end{equation}
+With the admissible scale inequalities used in
+\texttt{star\_inequality}, the right side is at most
+$(\log b)^2\mathcal B$.
+\end{proposition}
+\begin{proof}
+Set $D_0=D_{\rm row}$ and $h=h_0-mR+L$.
+The upper bound gives $V=nh$. Apply \eqref{eq:lower-covolume}:
+\[
+D_0(h_0-3L)\le nh+2\delta
+ =D_0h-(D_0-n)h+2\delta.
+\]
+Since $D_0-n\le4D_0/b^2$ and $-h\le b^2x^{99}$, division by
+$D_0>0$ gives
+\[
+h_0-3L\le h_0-mR+L+4x^{99}+2\delta/D_0.
+\]
+The index bound \eqref{eq:index} yields
+\eqref{eq:comparison-raw}. The final scale comparison is
+the monomial bound \texttt{D.le\_of\_hasLogBound} in the source.
+\end{proof}
+
+\begin{remark}
+\label{rem:comparison-status}
+The proof of Proposition~\ref{prop:comparison} checks the algebra
+between A, B, and C. It does not establish those three theorems,
+the existence of the admissible data, or the numerical scale bounds.
+Their Lean proofs are separate dependencies.
+\end{remark}
+
+\section{From the comparison to a one-sided error bound}
+\label{sec:one-sided}
+The choice of $D$ includes
+\begin{equation}
+\label{eq:remainder-identity}
+R=a\bigl(T(R_{N_0}(x)-R_{N_0}(x_1))
+               +H R_1(x_1)\bigr),
+\end{equation}
+where $T=\#\mathrm{thick}$, $H=\#\mathrm{tops}$, and
+$R_M$ is the normalized weighted prime error defined in
+Section~\ref{sec:error-definition}. This is the exact identity
+\texttt{Data.remainder\_eq}.
+
+The window theorem in Section~\ref{sec:window} permits $x_1$ to be
+chosen with
+\[
+R_{N_0}(x_1)-(H/T)R_1(x_1)\le x^{-10^6}.
+\]
+Divide \eqref{eq:remainder-identity} by $maT$ and use
+Proposition~\ref{prop:comparison}. With $m\ge\sqrt{x}$,
+$T\ge H/\log b$, and $\log b=x^\eps$, the formal scale estimates
+give, for $0<\eps<1/100$,
+\begin{equation}
+\label{eq:error-bound}
+R_{N_0}(x)\le x^{8\eps-1/2}
+\qquad\text{for all sufficiently large }x.
+\end{equation}
+The exponent and the quantifiers are those of
+\path{eventually_primeError_le_rpow} in
+\leanfile{New/Main.lean}{New/Main.lean}.
+
+\chapter{Prime errors and the analytic endgame}
+\label{ch:prime-error}
+\section{The weighted count}
+\label{sec:error-definition}
+Let $d$ be a prime congruent to $7$ modulo $8$ and coprime to $M$.
+For the associated quadratic character $\chi_d$, the compact
+source defines a nonnegative weight on positive integers,
+\begin{equation}
+\label{eq:lambda}
+\lambda_{d,M}(n)=
+  \mathbf1_{n\equiv1\,({\rm mod}\,M)}
+  \Lam(n)(1-\chi_d(n)).
+\end{equation}
+The Legendre factor vanishes at split primes and doubles the weight
+at nonsplit primes. The von Mangoldt factor also includes prime
+powers. In particular, ``prime sum'' is a conventional shorthand
+for a weighted prime-power sum.
+
+Let
+\[
+S_r(y)=y^{-r}\sum_{1\le n\le y}\lambda_{d,M}(n)n^{r-1}
+\quad(r=0,1).
+\]
+The normalized error is
+\begin{equation}
+\label{eq:prime-error}
+R_M(y)=S_0(y)-S_1(y)-\frac{\log y}{\varphi(M)}
+       -\re\mathcal L_{d,M}(1),
+\end{equation}
+where $\mathcal L_{d,M}$ is a mean of differences of logarithmic
+derivatives of completed Dirichlet $L$-functions. The precise mean
+is \texttt{logDerivMean} in
+\leanfile{New/Endgame/PrimeError.lean}{PrimeError.lean}.
+For $0<y\le A$, the source proves the finite identity
+\begin{equation}
+\label{eq:finite-error}
+R_M(y)=\frac1A\sum_{1\le n\le A}\lambda_{d,M}(n)
+          (A/n-A/y)^+
+      -\frac{\log y}{\varphi(M)}
+      -\re\mathcal L_{d,M}(1),
+\end{equation}
+where $u^+=\max(u,0)$.
+Equation~\eqref{eq:finite-error} is the interface between the
+divisibility estimates for forms and the analytic prime error.
+
+\begin{proposition}
+\label{prop:finite-error}
+Let $d$ be a prime, let $M\ge1$, and let $0<y\le A$ with
+$A$ a positive integer. For $\lambda_{d,M}$ and $R_M$ defined
+by \eqref{eq:lambda} and \eqref{eq:prime-error}, the finite
+identity \eqref{eq:finite-error} holds.
+\end{proposition}
+\begin{proof}
+The definitions give
+\[
+S_0(y)-S_1(y)
+=\sum_{1\le n\le y}\lambda_{d,M}(n)
+   \left(\frac1n-\frac1y\right).
+\]
+For $n\le y$, the expression in parentheses equals
+$(A/n-A/y)^+/A$. For $y<n\le A$ the positive part is zero.
+Appending those zero terms gives \eqref{eq:finite-error}.
+\end{proof}
+
+\section{A good point in a long window}
+\label{sec:window}
+The source's predicate \texttt{IsPolar} describes the analytic
+continuation and pole structure of a Laplace transform. The file
+\leanfile{New/Endgame/OneSidedCriterion.lean}%
+{OneSidedCriterion.lean} proves a window statement in this setting.
+
+\begin{theorem}
+\label{thm:window}
+Let $E$ and $E'$ satisfy the source's \texttt{IsPolar}
+hypotheses. For all sufficiently large $t$ and every
+$0\le X\le e^t$, there is $u\in[t,t^2]$ such that
+\begin{equation}
+\label{eq:window}
+E(u)-XE'(u)\le e^{-t}.
+\end{equation}
+\end{theorem}
+The statement is
+\texttt{IsPolar.exists\_window\_sub\_mul\_le}. The source
+proves it with a high moment of a Laplace transform and an
+inequality that would be contradicted if \eqref{eq:window} failed
+throughout the window. Here $E(u)=R_{N_0}(e^u)$ and
+$E'(u)=R_1(e^u)$. The polar hypotheses are established for these
+functions in \texttt{isPolar\_primeError}. A full paper proof of
+the moment argument is still needed for this manuscript.
+
+The quantitative step is more informative than the phrase
+``sign change.'' For $R>3$ sufficiently near $3$, the source
+obtains, for all large $t$ and every integer $k\ge0$,
+\begin{equation}
+\label{eq:moment}
+\left|\int_0^\infty v^k e^{-3v}E(v)\,dv\right|
+   \le\frac{k!\,t}{R^k},
+\qquad |E(v)|\le t e^v\quad(v\ge0).
+\end{equation}
+The same holds for $E'$. Its proof differentiates the polar
+Laplace transform under the integral and bounds the derivatives
+by analyticity in a disk around $3$. To prove the window theorem,
+the Lean source chooses $k=\lceil t^2/9\rceil$. If
+$E(u)-XE'(u)>e^{-t}$ throughout $[t,t^2]$, positivity of a
+weighted integral over $v>0$ gives a lower bound. The moments
+\eqref{eq:moment} and two explicit exponential correction
+terms give a strictly smaller upper bound. Thus the point
+$u$ in \eqref{eq:window} exists. The constants $3$, $9$,
+and the window $[t,t^2]$ belong to the formal statement and
+its proof; they are not a general sign-change principle.
+
+\section{The Landau criterion}
+\label{sec:landau}
+The formal lemma
+\texttt{entireL\_ne\_zero\_of\_primeError\_le}
+uses a one-sided bound such as \eqref{eq:error-bound}. It requires
+the bound for every prime $d$ in a unit residue class that also
+forces $d\equiv7\pmod8$. If $\beta>1/2$ and eventually
+$R_M(x)\le x^{\beta-1}$ for those $d$, then no completed
+$L$-function for a character modulo $M$ has a zero in
+$\re s>\beta$. Its proof combines a Landau positivity argument
+with a quadratic twist chosen to avoid a possible zero. The
+quadratic-twist input lives in
+\leanfile{Lib/Analytic/QuadraticTwist/ZeroFreeTwist.lean}%
+{ZeroFreeTwist.lean}. We do not replace that input by a blanket
+claim that a one-sided bound for one chosen $d$ suffices.
+
+For a character modulo $q$, \texttt{New.grh} passes to
+$N_0=18480q$ and the unit class $N_0/2-1$. It applies
+\eqref{eq:error-bound} for each prime $d$ in that class, takes
+$\beta=1/2+8\eps$ below the real part of a proposed zero,
+and invokes the criterion. This proves the half-plane
+nonvanishing statement \eqref{eq:nonvanishing} within the Lean
+development.
+
+\chapter{The admissible data}
+\label{ch:data}
+\section{Scales and fields}
+The finite data are arranged to make the comparison in
+Chapter~\ref{ch:assembly} effective. The guide specifies
+$18480\mid N_0$, a prime $d\equiv N_0/2-1\pmod{N_0}$,
+$K=\Q(\sqrt{-d})$, and a cyclotomic extension $E=K(\zeta)$.
+The ranks $k,r$ obey $r+1=k+m$, with
+\begin{equation}
+\label{eq:scales}
+\sqrt{x}\le m\le2\sqrt{x},\quad
+x^5\le r\le3x^5,\quad
+(\log b)^{100}\le x,\quad
+x^{10^6}\le x_1,\quad x_1^{10^6}\le b.
+\end{equation}
+The number of top infinite places is around $x^{11}$ and the
+thick subset has at least $\#\mathrm{tops}/\log b$ elements.
+There are also two primes whose product $g$ lies between
+$b^{20}$ and $b^{22}$, and a level prime $N$ with
+$\log N$ in a prescribed short window. These are features of
+the data predicate, not independent choices one can make later.
+
+The existence theorem \texttt{exists\_data} in
+\leanfile{New/Data/DataExist.lean}{DataExist.lean} gives such
+data for all sufficiently large $x$ when $0<\eps<1/100$.
+In particular it fixes $\log x_1=x^{\eps/6}$ and
+$\log b=x^\eps$. Its proof uses a Behrend-type set for
+several equations and a pigeonhole argument in the class group.
+The other ingredients include primes in progression and
+construction of the field and place data. The source's precise
+quantifiers are essential to the window choice in
+Section~\ref{sec:one-sided}.
+
+\section{Rows, columns, and theta lifts}
+\label{sec:spaces}
+Columns are algebraic forms on a definite unitary group of rank
+$k$. Rows are cusp forms on an indefinite unitary group of rank
+$r$. The finite group $G$ is a product of general linear groups
+over residue fields at chosen places. Its idempotent $e_0$ cuts
+out the row space. A Poincar\'e map from columns to rows,
+its translates by $G$, and a chain $\Theta_\vartheta$ of $m$
+theta lifts provide the forms used in Theorems A--C. The guide
+records these definitions, and
+\leanfile{New/Trace/GoodIdempotent.lean}{GoodIdempotent.lean}
+defines the good row space.
+
+This setup is a large part of the proof. In particular, the
+identification of the rows with the representation to which
+the height and integral-lattice estimates apply is carried by
+the formal development. This manuscript uses the notation
+$\Theta_\vartheta$ only for that specific chain.
+
+\chapter{Theorem A: short forms}
+\label{ch:short}
+\section{The two conclusions}
+For each $s\in G$, let $B_s$ be a rationally scaled projected
+Poincar\'e map from ramified columns to rows. The formal
+Theorem A, \texttt{Data.short\_forms}, supplies one positive
+rational scaling $q$ and a spanning set $S$ of integral
+ramified columns. Its first conclusion bounds every untwisted
+lift of every $B_s\phi$, $\phi\in S$, at every complex embedding:
+\begin{equation}
+\label{eq:short-bound}
+\|\Theta_1(B_s\phi)\|_\sigma^2
+\le\exp(h_0-mR+L).
+\end{equation}
+Its second conclusion controls the index of every finite
+family selected from the images $B_s(S)$ with $s$ in a finite
+set $t\subset G$:
+\begin{equation}
+\label{eq:a-index}
+\delta\le |t|\dim(\mathrm{Column})\,\mathcal B.
+\end{equation}
+The index is an integral-lattice condition at all relevant
+$p$-adic places. It is stronger than a bound on a determinant
+over $\C$.
+
+\begin{theorem}[Theorem A in the compact Lean source]
+\label{thm:a}
+Let $D$ be admissible data. There are $q\in\Q_{>0}$ and
+maps $B_s=qP_s$ from ramified columns to rows, where $P_s$
+is the projected Poincar\'e map translated by $s\in G$.
+There is a subset $S$ of integral ramified columns spanning
+the ramified-column space. For every $\phi\in S$, $s\in G$,
+and complex embedding $\sigma$, the norm bound
+\eqref{eq:short-bound} holds. For every finite $t\subset G$
+and every finite family of rows selected from
+$\bigcup_{s\in t}B_s(S)$, its index is at most the right
+side of \eqref{eq:a-index}.
+\end{theorem}
+The formal proof is \texttt{Data.short\_forms} in
+\leanfile{New/Endgame/ShortAndEnough.lean}{ShortAndEnough.lean}.
+Theorem~\ref{thm:a} is stated here at the level of its
+mathematical output; the source specifies the index through
+\texttt{Data.IndexLe}, including a matrix over each valuation
+ring and a bound on the norm of its determinant.
+
+The scale $q$ is a product of rational prime powers. Its
+archimedean logarithm equals a chosen sum of local gains and
+losses, while its $p$-adic norms encode the same integers with
+opposite signs. The elementary rational construction is proved
+as \texttt{exists\_rat\_log\_eq\_and\_padic\_norm\_eq}.
+The deeper work in Theorem A lies in the projected Poincar\'e
+series, the seesaw identity, the Weyl norm estimate, and the
+local divisibility of theta lifts. The exact import chain is
+visible at the head of
+\leanfile{New/Endgame/ShortAndEnough.lean}{ShortAndEnough.lean}.
+
+\section{The two estimates behind Theorem A}
+\label{sec:a-mechanisms}
+The seesaw identity compares two constructions of the same
+chain of forms. There is a nonzero scalar $c$ such that for
+each tame twist $\vartheta$ a good finite datum $\Psi$ has
+\begin{equation}
+\label{eq:seesaw}
+\iota_\vartheta\bigl(\mathcal P(c\phi)\bigr)
+ =B^\Psi_\vartheta\phi
+\qquad(\phi\text{ a ramified column}).
+\end{equation}
+Here $\mathcal P$ is a Poincar\'e series, $\iota_\vartheta$
+the $m$-stage theta chain through the indefinite spaces, and
+$B^\Psi_\vartheta$ its definite-space expansion. This is
+\texttt{seesaw} in
+\leanfile{New/Seesaw/SeesawTheorem.lean}{SeesawTheorem.lean}.
+Equation~\eqref{eq:seesaw} lets the construction control
+the norm of the row lift through columns, whose local
+divisibility can be estimated.
+
+The archimedean estimate
+\path{weylNormSq_Bmu_le} in
+\leanfile{New/Columns/LocalStatement.lean}{LocalStatement.lean}
+has the following form. If the conjugate norm square of a
+column is at most $e^B$ and $\Psi$ is good, then the norm
+square of its $B^\Psi$ image is at most
+\begin{equation}
+\label{eq:weyl-bound}
+\exp\!\left(B+\mathrm{heightPerRow}
+  +2\sum_{p\in\mathcal P_{\rm ns}}
+       \mathrm{gain}(p)\log p+\mathcal B\right).
+\end{equation}
+The finite set $\mathcal P_{\rm ns}$ consists of selected
+small nonsplit primes. A rational factor $q$ is then chosen
+so its logarithm cancels the gains in \eqref{eq:weyl-bound},
+up to the allowed local losses. The bound
+\eqref{eq:height-per-row} turns the result into
+\eqref{eq:short-bound}.
+
+At a prime $p$, the local statement
+\texttt{exists\_indexDvd\_Bmu\_divisible} supplies a
+submodule of columns of controlled index. For each integer
+\[
+\beta<\mathbf1_{p\in\mathcal P_{\rm ns}}
+       \mathrm{gain}(p)-\mathrm{allowedLoss}(p)+1,
+\]
+the appropriately $p^{-\beta}$-scaled $B^\Psi$ image of
+its ramified elements is integral at the relevant $p$-adic
+place. The index exponent is at most
+$\mathrm{allowedLoss}(p)\dim(\mathrm{Column})$.
+This is the local origin of \eqref{eq:a-index}; summing
+the local losses and choosing $q$ give the global bound.
+The source treats collisions at small nonsplit primes and
+the level prime separately. Both cases are part of the
+stated theorem, and neither follows merely from
+\eqref{eq:seesaw}.
+
+\section{Why the level matters}
+Our notation $h_0=m k\mathcal U$ denotes the source's
+\texttt{Data.mainHeight}; $\mathcal U$ is the cost of one
+direction. The source proves
+\begin{equation}
+\label{eq:height-per-row}
+\mathrm{heightPerRow}\le h_0-mR+\mathcal B.
+\end{equation}
+This is \texttt{Data.heightPerRow\_le}. Its proof compares a
+factorial bound for the size of jets with the chosen logarithm
+of the level prime $N$. The leading terms cancel. The
+remainder $-mR$ is therefore visible in the short-form
+estimate. Choosing $N$ after the relevant scales would not
+give this cancellation automatically; the short level window
+is part of admissibility.
+
+\chapter{Theorem B: enough forms}
+\label{ch:enough}
+\section{Almost spanning with few translates}
+The formal Theorem B, \texttt{Data.enough\_forms}, gives a
+finite set $t\subset G$ such that
+\begin{equation}
+\label{eq:few-translates}
+|t|\dim(\mathrm{Column})
+\le5D_{\rm row}\log(1+b^2)
+\end{equation}
+and the sum of the images of the maps $B_s$, $s\in t$,
+has dimension at least $(1-4/b^2)D_{\rm row}$.
+This is a dimension statement, not the assertion that every
+row is a projected Poincar\'e series.
+
+\begin{theorem}[Theorem B in the compact Lean source]
+\label{thm:b}
+Let $D$ be admissible data with column space $V$, row
+space $W$, and projected Poincar\'e maps $P_s:V\to W$
+for $s\in G$. Both $V$ and $W$ are nonzero. There is a
+finite $t\subset G$ satisfying \eqref{eq:few-translates}
+and
+\[
+\dim\sum_{s\in t}\operatorname{im}P_s
+ \ge(1-4/b^2)\dim W.
+\]
+\end{theorem}
+The formal proof is \texttt{Data.enough\_forms} in
+\leanfile{New/Endgame/ShortAndEnough.lean}{ShortAndEnough.lean}.
+
+Its proof invokes \path{exists_few_translates} after
+\path{ramifiedColumns_fill_rows}. The latter is the
+representation-theoretic filling statement. In the combination
+with Theorem A, choose a basis from the translated images.
+Equation~\eqref{eq:few-translates} inserted into
+\eqref{eq:a-index} gives \eqref{eq:index}; the uniform
+norm bound \eqref{eq:short-bound} yields the covolume bound
+\eqref{eq:upper-covolume}. This is the construction of the
+family used in Chapter~\ref{ch:assembly}.
+
+\section{A finite-dimensional spreading lemma}
+\label{sec:spread}
+The quantitative linear algebra is separated from the
+automorphic filling assertion. Let $V,W$ be finite-dimensional
+complex vector spaces and $B_s:V\to W$ a family of maps.
+For $\eta>0$, call the family spread if for every subspace
+$F\subseteq W$ some $s$ satisfies
+\begin{equation}
+\label{eq:spread}
+\dim B_s^{-1}F\le
+\left(\frac{1+\dim F/\dim W}{2}+\eta\right)\dim V.
+\end{equation}
+This is the source predicate \texttt{IsSpread} in
+\leanfile{New/Heights/OneDeterminant.lean}%
+{OneDeterminant.lean}. It measures how much of a new
+image can lie in a subspace already reached.
+
+\begin{theorem}
+\label{thm:few-translates}
+Let $V$ and $W$ be finite-dimensional complex vector spaces,
+with $V$ and $W$ nonzero. Let $(B_s:V\to W)_{s\in\Theta}$ satisfy
+\eqref{eq:spread} for some $\eta>0$. There is a finite set
+$t\subset\Theta$ of indices such that
+\[
+|t|\dim V\le5\dim W\log(1+1/\eta)
+\]
+and
+\[
+\dim\sum_{s\in t}\operatorname{im}B_s
+ \ge(1-4\eta)\dim W.
+\]
+\end{theorem}
+\begin{proof}
+Put $d=\dim V$ and $D=\dim W$. If $\eta\ge1/4$, take
+$t=\varnothing$. Suppose $0<\eta<1/4$. Apply the spread
+condition with $F=0$. Some $B_s$ has rank at least
+$(1/2-\eta)d>d/4$, so $d<4D$.
+
+Start with $F_0=0$ and write $q_i=\dim(W/F_i)$. Whenever
+$q_i>4\eta D$, choose $s$ from \eqref{eq:spread} and set
+$F_{i+1}=F_i+\operatorname{im}B_s$. Rank-nullity gives
+\[
+\dim(F_{i+1}/F_i)
+=d-\dim B_s^{-1}F_i
+\ge\left(\frac{q_i}{2D}-\eta\right)d
+\ge\frac{q_i d}{4D}.
+\]
+Thus $q_{i+1}\le q_i(1-d/(4D))$. The chosen $s$ is new:
+an old image lies in $F_i$ and would add zero dimension.
+After at most
+\[
+k=\left\lceil\frac{4D}{d}\log\frac1{4\eta}\right\rceil
+\]
+steps, either the construction has stopped or
+$q_k\le D e^{-kd/(4D)}\le4\eta D$. Moreover
+\[
+kd\le4D\log\frac1{4\eta}+d
+  <4D\left(\log\frac1{4\eta}+1\right)
+  \le5D\log(1+1/\eta).
+\]
+For the last inequality, use $\log4>1$ and
+$\log(1+1/\eta)\ge\log(1/\eta)$. The selected
+indices form the required set $t$.
+\end{proof}
+The source proves this as \texttt{exists\_few\_translates}.
+An alternative proof in the source uses the potential
+\[
+\Phi(F)=5\dim W\log\left(1+
+\frac{\dim(W/F)}{\eta\dim W}\right).
+\]
+Starting with $F=0$, add an image $B_s(V)$ when the spread
+condition makes the quotient dimension drop. The proof shows
+that the decrease in $\Phi$ pays at least $\dim V$ for each
+added translate. A maximal set under the resulting budget
+has quotient dimension at most $4\eta\dim W$, which gives
+the theorem. In Theorem B the source takes $\eta=b^{-2}$.
+The remaining burden is to prove \eqref{eq:spread} for the
+specific Poincar\'e maps; that is the role of the filling
+modules and is not a consequence of this linear-algebra lemma.
+
+\chapter{Theorem C: integral forms are long}
+\label{ch:long}
+\section{Statement of the lower bound}
+\begin{theorem}[Theorem C in the compact Lean source]
+\label{thm:c}
+Let $D$ be admissible data with row dimension
+$D_{\rm row}>0$. Let $y_1,\ldots,y_n$ be independent rows,
+where $n\ge(1-4/b^2)D_{\rm row}$. Assume their index is
+at most $\delta$ in the sense of \texttt{Data.IndexLe},
+and for every complex embedding $\sigma$ their untwisted
+theta lifts have squared covolume at most $e^V$. Then
+\[
+D_{\rm row}(h_0-3L)\le V+2\delta.
+\]
+\end{theorem}
+The formal proof is \texttt{Data.integral\_forms\_long} in
+\leanfile{New/Endgame/LongForms.lean}{LongForms.lean}.
+
+\section{Volume ratios and heights}
+The compact proof attaches a volume $\mathfrak z(\vartheta)$
+to a twist of the row representation. It factors into a scalar
+and the volumes of the individual theta lifts. The factorization
+is \texttt{volume\_iota\_eq\_prod\_liftVolume} in
+\leanfile{New/Rows/RowVolume.lean}{RowVolume.lean}.
+For each $p$-adic embedding $\iota$, the proof selects a fit
+twist $\vartheta_\iota$. Its congruence properties are
+\texttt{IsFitFamily}; existence is
+\texttt{exists\_isFitFamily} in
+\leanfile{New/Selmer/FitTwistsExist.lean}{FitTwistsExist.lean}.
+
+The proof uses two height bounds. The first controls the
+squared ratio $\mathfrak z(1)^2/
+\mathfrak z(\vartheta_\iota)^2$ by
+\begin{equation}
+\label{eq:ratio-one}
+2D_{\rm row}(2L-h_0).
+\end{equation}
+The second bounds the height of
+$\mathfrak z(\vartheta_\iota)/\mathfrak z(1)$ by
+\begin{equation}
+\label{eq:ratio-two}
+V+2\delta+D_{\rm row}b.
+\end{equation}
+These are \texttt{heightLe\_volume\_ratio\_sq} and
+\texttt{heightLe\_volume\_rows} in
+\leanfile{New/Endgame/LongForms.lean}{LongForms.lean}.
+The first follows from the lift-volume height gain and bounds
+for scalar factors. The second extends an almost spanning
+family to a basis with cruder rows and applies a determinant
+estimate. Its hypotheses include linear independence, the
+near-spanning bound, index control, and the covolume bound at
+every complex embedding.
+
+The volume factorization has a precise shape:
+\begin{equation}
+\label{eq:volume-factorization}
+\mathfrak z(\vartheta)
+=|c(\vartheta)|^{D_{\rm row}}
+ \prod_{j=1}^m\lambda_j(\vartheta^j),
+\end{equation}
+where $\lambda_j$ is the squared determinant volume of the
+$j$th good lift. The scalar $c(\vartheta)$ carries a
+controlled square cost. This is
+\texttt{volume\_iota\_eq\_prod\_liftVolume} in
+\leanfile{New/Rows/RowVolume.lean}{RowVolume.lean}.
+It reduces the height of a whole chain to the sum of
+the heights of the individual lift-volume ratios and
+one scalar correction.
+
+For a fit family $\vartheta_\iota$ and $1\le j\le m$,
+\texttt{heightLe\_liftVolume\_ratio} in
+\leanfile{New/Rows/LiftVolumeHeight.lean}%
+{LiftVolumeHeight.lean} bounds the height of
+$\lambda_j(1)/\lambda_j(\vartheta_\iota^j)$ by
+\begin{equation}
+\label{eq:per-lift-height}
+D_{\rm row}k\bigl((\log b)B_0-\mathcal U\bigr),
+\qquad B_0=\frac{\mathcal B}{mk}.
+\end{equation}
+Summing \eqref{eq:per-lift-height} over the $m$ lifts gives
+$D_{\rm row}(L-h_0)$, since $h_0=mk\mathcal U$.
+The scalar in \eqref{eq:volume-factorization} accounts for
+the remaining error in \eqref{eq:ratio-one}. This is how
+the row chain repays the cost of the idle directions in the
+height calculation.
+
+\section{The product-formula comparison}
+Multiply the square of the ratio in
+\eqref{eq:ratio-two} by the ratio in
+\eqref{eq:ratio-one}. The resulting family is identically
+$1$. Its height is nonnegative. Thus the two upper bounds
+cannot have a negative sum. After absorbing
+$D_{\rm row}b$ into the allowed error, the source obtains
+\eqref{eq:lower-covolume}. This is the last bound needed
+for Proposition~\ref{prop:comparison}.
+
+The product formula is the short final step; the substantive
+dependencies are the fit twists, the factorization of volumes,
+the local and global height estimates, and the determinant
+estimate for the completed basis. Those are proved in
+different Lean files and have not been converted here into a
+continuous conventional proof.
+
+\section{The determinant mechanism}
+\label{sec:determinant}
+The intermediate result \texttt{one\_determinant} in
+\leanfile{New/Heights/OneDeterminant.lean}%
+{OneDeterminant.lean} explains the $2\delta$ in
+\eqref{eq:ratio-two}. Begin with a basis $x_i$ of the row
+space and the Gram determinant of its untwisted lifts.
+The complex covolume assumption bounds every conjugate of
+this determinant by $e^V$. At a prime $\ell$, a matrix
+$M_\ell$ recombines the twisted lifts into integral vectors.
+If $e_\ell$ is the local index loss and $\gamma_\ell$ a
+scalar correction, the local determinant condition has the
+shape
+\begin{equation}
+\label{eq:det-local}
+|\det M_\ell|_\ell
+ \ge e^{-e_\ell}|\gamma_\ell|_\ell^k.
+\end{equation}
+Integrality bounds the $\ell$-adic norm of the Gram
+determinant after recombination by $1$. The determinant
+changes by $\det M_\ell$ and its conjugate, so
+\eqref{eq:det-local} costs at most $2e_\ell$ in the
+logarithmic height. The sum of the $e_\ell$ over every
+finite set is at most $\delta$. The scalar corrections
+contribute their separate height budget. Combining the
+complex and finite-place estimates gives the abstract
+bound $V+2\delta+k g$ of \texttt{one\_determinant},
+where $g$ bounds the scalar height.
+
+The independent rows from Theorems A and B need not be a
+full basis. The result \texttt{Data.crude\_rows} in
+\leanfile{New/Exchange/CrudeRows.lean}{CrudeRows.lean}
+supplies additional forms that span the missing directions.
+Their twisted lifts are integral after a controlled scalar
+change, and all complex conjugates of their untwisted lifts
+have squared norm at most $\exp(x_1^2b^2)$. The proof of
+\texttt{heightLe\_volume\_rows} extends the selected rows
+with these forms, applies the determinant estimate, and
+absorbs the completion cost into $D_{\rm row}b$. The
+last absorption uses the admissible scale inequalities;
+it is a distinct quantitative step from the determinant
+identity itself.
+
+\chapter{Dependencies and verification boundary}
+\label{ch:boundary}
+\section{A source map}
+The table gives the reader a route into the pinned compact
+source. Each row names a mathematical output and the Lean
+declaration that supplies it. The table records source
+locations; it does not certify the argument in those files.
+
+\begin{longtable}{p{0.35\textwidth}p{0.57\textwidth}}
+\toprule
+Output & Lean declaration and file \\
+\midrule
+\endhead
+Five target theorems & \texttt{Main.lean}, with independent
+  statements in \texttt{Statements.lean} \\
+Admissible data & \texttt{exists\_data},
+  \texttt{New/Data/DataExist.lean} \\
+Short forms and index & \texttt{Data.short\_forms},
+  \texttt{New/Endgame/ShortAndEnough.lean} \\
+Almost spanning translates & \texttt{Data.enough\_forms},
+  \texttt{New/Endgame/ShortAndEnough.lean} \\
+Family of bounded covolume &
+  \texttt{Data.exists\_family\_covolumeSq\_le},
+  \texttt{New/Endgame/LongForms.lean} \\
+Lower covolume bound & \texttt{Data.integral\_forms\_long},
+  \texttt{New/Endgame/LongForms.lean} \\
+Weighted error identity & \texttt{Data.remainder\_eq},
+  \texttt{New/Endgame/ShortAndEnough.lean} \\
+Window point & \texttt{IsPolar.exists\_window\_sub\_mul\_le},
+  \texttt{New/Endgame/OneSidedCriterion.lean} \\
+Main inequality and GRH & \texttt{star\_inequality},
+  \texttt{eventually\_primeError\_le\_rpow},
+  \texttt{New.grh} in \texttt{New/Main.lean} \\
+\bottomrule
+\end{longtable}
+
+The compact source separates \texttt{src/New}, the proof-specific
+argument, from \texttt{src/Lib}, the background developed beyond
+Mathlib. Its authors count 219 files under \texttt{New} and 573
+under \texttt{Lib} \cite[Layout]{Sernau2026}. The guide names
+class field theory, cohomology, Galois representations, $p$-adic
+comparison, and automorphic formulas among the background inputs.
+The distinction is organizational: the Lean proof includes these
+results and does not import them as unproved axioms.
+
+\section{What has been checked}
+Sutherland's record pins the compact source to commit
+\texttt{72fead10}. It reports that both the compact and readable
+editions build, that their five statements match, and that the
+theorems depend only on \texttt{propext},
+\texttt{Classical.choice}, and \texttt{Quot.sound}. The
+record includes replays by Lean's kernel and independent
+checkers, with a successful paranoid Comparator run
+\cite[Summary]{Sutherland2026}. These are checks of formal
+derivations and their exact statements. They are distinct from
+a mathematical referee reading of the argument or a validation
+of this English exposition.
+
+\begin{question}
+\label{q:human-proof}
+Can every substantive lemma on the compact dependency route,
+including the background results in \texttt{src/Lib}, be matched
+to a conventional proof with all hypotheses and normalizations
+checked independently of the Lean development?
+\end{question}
+The compact authors explicitly say that this work has not yet
+been done \cite[Status]{Sernau2026}. This manuscript gives a
+route for that reading and leaves Question~\ref{q:human-proof}
+open.
+
+\appendix
+\chapter{Source and AI methods}
+\label{ch:methods}
+This manuscript was drafted on 27 November 2026 by an OpenAI
+Codex agent working for Taylor Dupuy. The child-agent interface
+did not expose its model identifier or token telemetry. The
+draft used the pinned compact source, its guide and README,
+the earlier book's teaching architecture, and the verification
+record cited above. It did not run Lean, inspect every one of
+the compact source files, or independently referee the deep
+mathematics. Its original contribution is expository text,
+the algebraic comparison in Proposition~\ref{prop:comparison},
+and the source map. These require human review before they are
+treated as a faithful account of the complete argument.
+
+The run plan, exact selected sources, and source boundaries are
+recorded in the working repository under
+\texttt{ai/2026-11-27-grh-compact-book/}. A source file linked
+from the body is a claim about what that file states, not a
+claim that the English explanation proves its theorem.
+
+\bibliographystyle{amsplain}
+\bibliography{grh-compact}
+\end{document}
+% <<< [agent-codex 2026-11-27 compact-book]

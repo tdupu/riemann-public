@@ -33,6 +33,12 @@ and blanks, as in Sutherland's pinned-source count.
 - [Notes on Alpöge's Proof of the Riemann Hypothesis](riemann-book.pdf)
   (21 November 2026). An AI-generated book explaining the original archive;
   it predates the shorter rewrite and does not verify the proof.
+- [The Compact Lean Argument for Dirichlet GRH](grh-compact.pdf)
+  (working draft, 27 November 2026). An AI-generated reading guide to the
+  compact rewrite. It proves the elementary comparison from stated inputs;
+  its deep construction and height arguments still need human mathematical
+  review. [LaTeX source](latex/grh-compact/grh-compact.tex) ·
+  [Bibliography](latex/grh-compact/grh-compact.bib).
 - [The Approach to the Riemann Hypothesis via Hilbert–Pólya Operators and
   Deninger Cohomology Theories](hilbert-polya-deninger.pdf). Notes on a
   different, conditional route; this is not a proof of RH.
@@ -54,6 +60,7 @@ and blanks, as in Sutherland's pinned-source count.
 | Path | What it is |
 | --- | --- |
 | `riemann-book.pdf` | The book on the original archive, built from `latex/riemann-book.tex` |
+| `grh-compact.pdf` | Working draft on the compact rewrite, built from `latex/grh-compact/grh-compact.tex` |
 | `hilbert-polya-deninger.pdf` | The Hilbert–Pólya and Deninger notes, built from `latex/notes.tex` |
 | `latex/` | LaTeX sources, bibliographies, and figure and data files read by the builds |
 | `lean/` | Lean 4 + Mathlib project formalizing claims of `latex/notes.tex` (not Alpöge's proof) |
@@ -70,5 +77,6 @@ repository. References inside its sources to `ai/<date>-…/` packages,
 ```bash
 cd latex && latexmk -pdf -outdir=build riemann-book.tex
 cd latex && latexmk -pdf -outdir=build notes.tex
+cd latex/grh-compact && latexmk -pdf -outdir=../build grh-compact.tex
 cd lean && lake exe cache get && lake build
 ```
