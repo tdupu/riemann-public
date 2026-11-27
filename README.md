@@ -34,10 +34,12 @@ and blanks, as in Sutherland's pinned-source count.
   (21 November 2026). An AI-generated book explaining the original archive;
   it predates the shorter rewrite and does not verify the proof.
 - [The Compact Lean Argument for Dirichlet GRH](grh-compact.pdf)
-  (working draft, 27 November 2026). An AI-generated reading guide to the
-  compact rewrite. It proves the elementary comparison from stated inputs;
-  its deep construction and height arguments still need human mathematical
-  review. [LaTeX source](latex/grh-compact/grh-compact.tex) ·
+  (41-page working draft, 27 November 2026). An AI-generated account of the
+  compact rewrite, covering the analytic endgame, Theorems A/B/C, the finite-cut
+  seesaw, and the height and determinant arguments. It proves the elementary
+  reductions from stated inputs; its deep construction and analytic mechanisms
+  still need human mathematical review.
+  [LaTeX source](latex/grh-compact/grh-compact.tex) ·
   [Bibliography](latex/grh-compact/grh-compact.bib).
 - [The Approach to the Riemann Hypothesis via Hilbert–Pólya Operators and
   Deninger Cohomology Theories](hilbert-polya-deninger.pdf). Notes on a

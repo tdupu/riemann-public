@@ -304,9 +304,121 @@ give, for $0<\eps<1/100$,
 R_{N_0}(x)\le x^{8\eps-1/2}
 \qquad\text{for all sufficiently large }x.
 \end{equation}
+\begin{proposition}
+\label{prop:one-sided-scale}
+Let $0<\eps<1/100$, and suppose $D$ satisfies
+\eqref{eq:remainder-identity}, the star inequality
+$mR\le f a(\log b)^5$, and
+$m\ge\sqrt x$, $T\ge H/\log b$, $f=H\varphi(N_0)$,
+$\log b=x^\eps$. Suppose also that its second scale
+satisfies
+$R_{N_0}(x_1)-(H/T)R_1(x_1)\le x^{-10^6}$.
+Then
+\[
+R_{N_0}(x)\le
+ \varphi(N_0)x^{6\eps-1/2}+x^{-10^6}.
+\]
+For fixed $N_0$, this implies \eqref{eq:error-bound}
+when $x$ is sufficiently large.
+\end{proposition}
+\begin{proof}
+Divide \eqref{eq:remainder-identity} by $maT$ and
+rearrange. The star inequality and the second-scale
+bound give
+\[
+R_{N_0}(x)\le\frac{f(\log b)^5}{mT}
+ +x^{-10^6}.
+\]
+Since $f/T\le\varphi(N_0)\log b$, the first term is
+at most $\varphi(N_0)(\log b)^6/\sqrt x$.
+For $\eps>0$, the fixed factor $\varphi(N_0)$ and
+the smaller power $x^{-10^6}$ are absorbed by
+$x^{2\eps}$ for large $x$.
+\end{proof}
 The exponent and the quantifiers are those of
 \path{eventually_primeError_le_rpow} in
 \leanfile{New/Main.lean}{New/Main.lean}.
+
+\section{The place count behind the remainder identity}
+\label{sec:remainder-proof}
+The identity \eqref{eq:remainder-identity} is a finite
+count, followed by cancellation of its explicit main
+terms. It is useful to show that count, since it is where
+the modulus $N_0$ first enters the prime sum. Let
+$H=\#\mathrm{tops}$ and $T=\#\mathrm{thick}$.
+For a positive integer $n$, set
+\[
+C(n)=\#\{\tau\in\mathrm{tops}:
+       (-n)\tau\in\mathrm{thick}\}.
+\]
+The top places form the class $1\pmod{N_0}$ and the
+thick places form the class $-1\pmod{N_0}$.
+Multiplication by $-n$ therefore yields, after
+multiplication by the weight $\lambda_{d,1}(n)$,
+\begin{equation}
+\label{eq:place-count}
+C(n)\lambda_{d,1}(n)
+ =T\lambda_{d,N_0}(n).
+\end{equation}
+If $n\equiv1\pmod{N_0}$, this multiplication permutes
+the tops onto the class containing the thick places;
+exactly $T$ top places map into them. Otherwise no top
+place maps into the thick class. The source handles the
+nonunit case through its \texttt{placeOfInt} definition.
+Equation~\eqref{eq:place-count} is the local counting
+claim \texttt{A} inside \texttt{Data.remainder\_eq} in
+\leanfile{New/Endgame/ShortAndEnough.lean}%
+{ShortAndEnough.lean}.
+
+At a top place $\tau$, the nominal weight of
+$(-n)\tau$ is $a/x$ when it is thick and $a/x_1$
+otherwise. Hence the sum of the terms in
+\eqref{eq:data-prime-sum} over the tops equals
+\begin{align}
+\label{eq:asks-sum}
+\sum_{\tau\in\mathrm{tops}}A(a,\tau)
+={}&T\sum_{n\le a}\lambda_{d,N_0}(n)
+  \left[\left(\frac an-\frac ax\right)^+
+        -\left(\frac an-\frac a{x_1}\right)^+\right]\\
+ &+H\sum_{n\le a}\lambda_{d,1}(n)
+       \left(\frac an-\frac a{x_1}\right)^+.
+\end{align}
+Apply \eqref{eq:finite-error} at $x$ and $x_1$.
+The constants $\re\mathcal L_{d,N_0}(1)$ cancel
+between the first two sums. By
+\eqref{eq:mean-at-one}, the last sum has constant
+$-1-\operatorname{CS}(d)$. Thus
+\begin{align}
+\label{eq:asks-expanded}
+\sum_{\tau\in\mathrm{tops}}A(a,\tau)
+=a\bigg[&T\bigl(R_{N_0}(x)-R_{N_0}(x_1)\bigr)
+       +H R_1(x_1)\\
+ &+\frac{T}{\varphi(N_0)}(\log x-\log x_1)
+       +H(\log x_1-1-\operatorname{CS}(d))\bigg].
+\end{align}
+
+There are $f=H\varphi(N_0)$ infinite places, of which
+$T$ are thick. Consequently the mean logarithmic
+nominal weight is
+\[
+\bar w=\log a-
+ \frac{T\log x+(f-T)\log x_1}{f}.
+\]
+Substituting this in \eqref{eq:main-ask} gives
+\begin{equation}
+\label{eq:ask-cancellation}
+H A_{\rm main}=a\left[
+ \frac{T}{\varphi(N_0)}(\log x-\log x_1)
+ +H(\log x_1-1-\operatorname{CS}(d))\right].
+\end{equation}
+By definition $R=\sum_{\tau\in\mathrm{tops}}
+(A(a,\tau)-A_{\rm main})$. Subtracting
+\eqref{eq:ask-cancellation} from
+\eqref{eq:asks-expanded} proves
+\eqref{eq:remainder-identity}. This derivation uses
+the source's exact finite count and the already proved
+finite-error identity; no asymptotic prime theorem is
+hidden in the cancellation.
 
 \chapter{Prime errors and the analytic endgame}
 \label{ch:prime-error}
@@ -338,7 +450,7 @@ R_M(y)=S_0(y)-S_1(y)-\frac{\log y}{\varphi(M)}
        -\re\mathcal L_{d,M}(1),
 \end{equation}
 where $\mathcal L_{d,M}$ is a mean of differences of logarithmic
-derivatives of completed Dirichlet $L$-functions. The precise mean
+derivatives of pole-removed Dirichlet $L$-functions. The precise mean
 is \texttt{logDerivMean} in
 \leanfile{New/Endgame/PrimeError.lean}{PrimeError.lean}.
 For $0<y\le A$, the source proves the finite identity
@@ -379,10 +491,30 @@ continuation and pole structure of a Laplace transform. The file
 \leanfile{New/Endgame/OneSidedCriterion.lean}%
 {OneSidedCriterion.lean} proves a window statement in this setting.
 
+\begin{definition}
+\label{def:is-polar}
+Let $E:\R\to\R$ be measurable and let $r:\C\to\C$.
+The source predicate $\operatorname{IsPolar}(E,r)$ means that
+$|E(v)|\le C e^v$ for $v\ge0$ and some $C$, and that
+the Laplace transform
+\[
+\Phi(s)=\int_0^\infty E(v)e^{(1-s)v}\,dv
+\quad(\re s>2)
+\]
+extends meromorphically. The function $(s-1)\Phi(s)$
+must be analytic on $\re s\ge1$. At every $\rho$ with
+$\re\rho>0$, the limit of $(s-\rho)\Phi(s)$ as
+$s\to\rho$ through $s\ne\rho$ must equal $r(\rho)$.
+\end{definition}
+This is \texttt{IsPolar} in
+\leanfile{Lib/Analytic/Landau/PolarLandau.lean}%
+{PolarLandau.lean}.
+
 \begin{theorem}
 \label{thm:window}
-Let $E$ and $E'$ satisfy the source's \texttt{IsPolar}
-hypotheses. For all sufficiently large $t$ and every
+Let $\operatorname{IsPolar}(E,r)$ and
+$\operatorname{IsPolar}(E',r')$ hold. For all sufficiently
+large $t$ and every
 $0\le X\le e^t$, there is $u\in[t,t^2]$ such that
 \begin{equation}
 \label{eq:window}
@@ -426,7 +558,7 @@ The formal lemma
 uses a one-sided bound such as \eqref{eq:error-bound}. It requires
 the bound for every prime $d$ in a unit residue class that also
 forces $d\equiv7\pmod8$. If $\beta>1/2$ and eventually
-$R_M(x)\le x^{\beta-1}$ for those $d$, then no completed
+$R_M(x)\le x^{\beta-1}$ for those $d$, then no pole-removed
 $L$-function for a character modulo $M$ has a zero in
 $\re s>\beta$. Its proof combines a Landau positivity argument
 with a quadratic twist chosen to avoid a possible zero. The
@@ -442,6 +574,212 @@ $\beta=1/2+8\eps$ below the real part of a proposed zero,
 and invokes the criterion. This proves the half-plane
 nonvanishing statement \eqref{eq:nonvanishing} within the Lean
 development.
+
+\section{Logarithmic derivatives and residues}
+\label{sec:log-derivative}
+The constant removed in \eqref{eq:prime-error} has an exact
+analytic definition. Let $\widetilde L(s,\xi)$ be
+\texttt{entireL}: it equals $L(s,\xi)$ for a nonprincipal
+character and continues $(s-1)L(s,\xi)$ for a principal
+one. This is the definition in
+\leanfile{Lib/General/NumberTheory/QuadField.lean}%
+{QuadField.lean}. With $\chi_d(n)=(n/d)$, the source sets
+\begin{equation}
+\label{eq:log-derivative-mean}
+\mathcal L_{d,M}(s)=\frac1{\varphi(M)}
+\left(\sum_{\xi\bmod M}
+\left\{\frac{\widetilde L'}{\widetilde L}
+  (s,\xi\chi_d)-
+  \frac{\widetilde L'}{\widetilde L}(s,\xi)\right\}-1\right).
+\end{equation}
+The final $-1$ lies outside the character sum. At modulus
+one, \texttt{re\_logDerivMean\_one} gives
+\begin{equation}
+\label{eq:mean-at-one}
+\re\mathcal L_{d,1}(1)
+  =-1-\operatorname{CS}(d),
+\end{equation}
+where $\operatorname{CS}(d)$ is the source's
+Chowla--Selberg constant. Averaging the Dirichlet series
+for a logarithmic derivative over $\xi\bmod M$ imposes
+$n\equiv1\pmod M$. Subtracting the quadratic twist
+produces $1-\chi_d(n)$. The principal pole contributes the
+$\log y/\varphi(M)$ term. The precise identities are
+\texttt{logDerivMean} and \texttt{primeError\_eq\_sum}
+in \leanfile{New/Endgame/PrimeError.lean}{PrimeError.lean}.
+
+The class \texttt{IsPolar} requires a real measurable
+$E(v)=O(e^v)$ and a meromorphic continuation $\Phi$ of
+\begin{equation}
+\label{eq:laplace-transform}
+\Phi(s)=\int_0^\infty E(v)e^{(1-s)v}\,dv
+\qquad(\re s>2).
+\end{equation}
+It requires $(s-1)\Phi(s)$ analytic on $\re s\ge1$ and
+specifies the residue at each $s$ with $\re s>0$.
+See \leanfile{Lib/Analytic/Landau/PolarLandau.lean}%
+{PolarLandau.lean}. For $E(v)=R_M(e^v)$, the proof of
+\texttt{isPolar\_primeError} identifies the residue as
+\begin{equation}
+\label{eq:polar-residue}
+r_{d,M}(s)=\frac{1}{\varphi(M)s(1-s)}
+\sum_{\xi\bmod M}
+\bigl(\operatorname{ord}_s\widetilde L(\xi)
+  -\operatorname{ord}_s\widetilde L(\xi\chi_d)\bigr).
+\end{equation}
+Here $\operatorname{ord}_s$ is zero at a nonzero value and
+the analytic order at a zero. The hypotheses are
+$d\equiv7\pmod8$ and $(d,M)=1$. The local identity
+\[
+\frac{\widetilde L'}{\widetilde L}(z,\xi)
+ =\frac{\operatorname{ord}_s\widetilde L(\xi)}{z-s}
+ +\text{a holomorphic term}
+\]
+explains the difference of orders. The formal proof also
+checks growth and removal of the pole at $s=1$; those
+facts do not follow from the displayed local identity.
+
+\section{Why moments force a window point}
+\label{sec:moment-argument}
+The moment estimate \eqref{eq:moment} follows by
+differentiating \eqref{eq:laplace-transform} under the
+integral. On $\re s>2$, the growth condition dominates
+each differentiated integrand, giving
+\begin{equation}
+\label{eq:moment-derivative}
+\Phi^{(k)}(s)=\int_0^\infty
+ (-v)^kE(v)e^{(1-s)v}\,dv.
+\end{equation}
+The singularity at $1$ is removable under \texttt{IsPolar}.
+One may therefore choose a disk centered at $4$ of radius
+$R>3$ and use Cauchy estimates on that disk. For large
+$t$ they give $|\Phi^{(k)}(4)|\le k!t/R^k$ for every $k$,
+which is \eqref{eq:moment} by
+\eqref{eq:moment-derivative}. The exact differentiation,
+disk, and Taylor-series argument is
+\texttt{IsPolar.eventually\_moment\_le} in
+\leanfile{New/Endgame/OneSidedCriterion.lean}%
+{OneSidedCriterion.lean}.
+
+To see the window mechanism, suppose instead that
+$E(u)-XE'(u)>e^{-t}$ at every $u\in[t,t^2]$.
+Choose $k=\lceil t^2/9\rceil$. The formal proof makes
+the following integrand nonnegative for $v>0$:
+\begin{equation}
+\label{eq:window-integrand}
+v^k\left(e^{-Rv+7t}+e^{-v+2t-t^2}
+  +e^{-3v}(E(v)-XE'(v)-e^{-t})\right).
+\end{equation}
+On the window, the last term is positive. Outside it,
+the first two exponentials dominate its possible negative
+part, using $|E(v)|,|E'(v)|\le te^v$ and $X\le e^t$.
+Integration would give a nonnegative result. The moment
+bound and
+\begin{equation}
+\label{eq:laplace-power}
+\int_0^\infty v^k e^{-av}\,dv=\frac{k!}{a^{k+1}}
+\qquad(a>0)
+\end{equation}
+give a negative upper bound for large $t$, a contradiction.
+This describes the proof of
+\texttt{IsPolar.exists\_window\_sub\_mul\_le}; its
+numerical comparison of the three terms is a formal-only
+input here.
+
+\section{The one-sided Landau step}
+\label{sec:landau-detail}
+The general lemma \texttt{IsPolar.landau} says that an
+eventual upper bound $E(v)\le e^{(\beta-1)v}$, together
+with nonnegative real residues at real points $u>\beta$,
+forces every residue with $\re s>\beta$ to vanish.
+Its proof subtracts $E$ from a larger positive exponential
+and applies the boundary-of-convergence argument for the
+Laplace transform of a nonnegative density. This is the
+Landau--Pringsheim mechanism in
+\leanfile{Lib/Analytic/Landau/PolarLandau.lean}%
+{PolarLandau.lean}.
+
+The difference of zero orders in \eqref{eq:polar-residue}
+does not have a sign by itself. The lemma
+\texttt{exists\_entireL\_quadTwist\_ne\_zero} in
+\leanfile{Lib/Analytic/QuadraticTwist/ZeroFreeTwist.lean}%
+{ZeroFreeTwist.lean} has the following stronger output.
+\begin{theorem}[Zero-free quadratic twist in the source]
+\label{thm:zero-free-twist}
+Let $\beta>1/2$, let $Y\ge0$, and let $a$ be a unit
+residue class modulo $M$ such that every prime $d$ in
+that class is congruent to $7\pmod8$ and coprime to
+$M$. There is a prime $d\equiv a\pmod M$ for which
+\[
+\widetilde L(s,\xi\chi_d)\ne0
+\quad\text{for every }\xi\bmod M,
+\quad\re s\ge\beta,
+\quad|\operatorname{Im}s|\le Y.
+\]
+\end{theorem}
+The source proves this through a zero-density estimate
+for quadratic twists averaged over the prime $d$.
+If every prime in the class were bad, the resulting
+bound would make the reciprocal-prime series in that
+class summable. The source contradicts this with the
+divergence of that series. Its zero-density theorem and
+the arithmetic of twist conductors are substantial
+formal inputs; the preceding argument identifies the
+contradiction but does not reproduce those estimates.
+
+Take $Y$ at least the imaginary part of a proposed
+zero $\rho$. Then Theorem~\ref{thm:zero-free-twist}
+selects a prime whose twisted factors avoid it and
+all real points to the right of $\beta$.
+The one-sided hypothesis holds for \emph{every} such prime,
+so it holds for that $d$. The residue then detects the
+untwisted zero. This explains the universal quantifier in
+Section~\ref{sec:landau}.
+
+\section{The final modulus and the critical line}
+\label{sec:final-modulus}
+To apply the one-sided criterion to a character modulo
+$q$, the source chooses $N_0=18480q$ and the residue
+class $a=N_0/2-1=9240q-1$ modulo $N_0$.
+Since $4\mid N_0$,
+\[
+a^2-1=N_0(N_0/4-1),
+\]
+so $a$ is a unit. Since $8\mid9240$, every prime
+$d\equiv a\pmod{N_0}$ satisfies $d\equiv7\pmod8$.
+It is also coprime to $N_0$. These two elementary
+facts supply the congruence hypotheses for the
+quadratic-twist criterion.
+
+Suppose $L(\rho,\chi)=0$ with $\re\rho>1/2$, away
+from the principal pole. Put
+\[
+\eps=\frac{\min(\re\rho,1)-1/2}{51},
+\qquad\beta=1/2+8\eps.
+\]
+Then $0<\eps<1/100$ and $\beta<\re\rho$.
+Changing the level of $\chi$ from $q$ to $N_0$
+preserves the relevant zero of the pole-removed
+$L$-function, as checked in \texttt{New.grh} by
+Mathlib's level-change identities. For every prime
+$d$ in the class $a$, Proposition~\ref{prop:one-sided-scale}
+and \texttt{exists\_data} supply the eventual bound
+$R_{N_0}(x)\le x^{\beta-1}$. The criterion of
+Section~\ref{sec:landau} contradicts the zero at
+$\rho$. This is the proof of \texttt{New.grh} in
+\leanfile{New/Main.lean}{Main.lean} once the deep
+inputs have been supplied.
+
+The final declaration \path{New.zeros_on_line}
+uses a functional equation to reflect Dirichlet zeros.
+The declaration \path{New.zeta_zeros_on_line} does the
+same for zeta zeros left of $1/2$, moving them into the
+excluded right half-plane. They also check the gamma
+factor and pole or trivial-zero exceptions. Thus the
+half-plane statement leads to the exact five target
+types in \leanfile{Main.lean}{Main.lean}. The English
+argument here records that reduction; its gamma-factor
+identities remain imported from the formal source.
 
 \chapter{The admissible data}
 \label{ch:data}
@@ -476,6 +814,175 @@ construction of the field and place data. The source's precise
 quantifiers are essential to the window choice in
 Section~\ref{sec:one-sided}.
 
+\section{The full scale record and its weights}
+\label{sec:data-record}
+The record \texttt{Data} in
+\leanfile{New/Data/AdmissibleData.lean}{AdmissibleData.lean}
+stores the logarithms of $x,x_1,b$, not merely their
+values. Besides \eqref{eq:scales}, it requires
+\begin{align}
+\label{eq:log-scale-record}
+10^{12}c&\le\log\log b,
+&100\log\log b&\le\log x,\\
+10^6\log x&\le\log x_1,
+&10^6\log x_1&\le\log b,
+\end{align}
+and $6\log\log x_1\le\log\log b$. The constant $c$
+absorbs quantities fixed by $N_0,d$, including a bound
+from the cyclotomic generator construction. These
+inequalities make every later comparison an explicit
+comparison of logarithmic exponents.
+
+The exponent $s$ in the conductor $N_1$ is linked to the
+power-of-two rank $m$; the rank $r$ is a power of three.
+The auxiliary field is $E=K(\zeta_{N_1})$, with
+$N_1=3^c2^sN_0$ in the source's notation. The rank
+$k=r+1-m$, the step size $t=5r$, and the ranks of the
+intermediate spaces are
+\begin{equation}
+\label{eq:chain-ranks}
+n_j=k+j(t+1),\qquad 0\le j\le m.
+\end{equation}
+The source also uses the gap $h=2r^8$ between successive
+weights. These formulas are the declarations
+\texttt{Data.k}, \texttt{Data.t}, \texttt{Data.n}, and
+\texttt{Data.h} in \texttt{AdmissibleData.lean}.
+
+The long order $a$ is the least multiple of $N_1$ at least
+$xb$. The initial weights are the least multiples of $N_1$
+at least $a/x$ and $a/x_1$. For an infinite place $\sigma$,
+the weight at stage $j$ is
+\begin{equation}
+\label{eq:weight-stages}
+w_j(\sigma)=
+\begin{cases}
+ b_1+jh+r^8,&\sigma\in\mathrm{thick},\\
+ b_2+jh+r^8,&\sigma\notin\mathrm{thick}.
+\end{cases}
+\end{equation}
+The nominal, unrounded weight is $a/x$ on thick places
+and $a/x_1$ elsewhere. The rounding keeps integrality
+conditions compatible with the conductor; the large gap
+separates weights at successive lifts. The source's
+\texttt{Data.primeSum} is the exact finite expression
+\begin{equation}
+\label{eq:data-prime-sum}
+A(y,\sigma)=\sum_{1\le n\le a}
+ \Lambda(n)(1-\chi_d(n))
+ \left(\frac yn-
+ w_{\rm nom}((-n)\sigma)\right)^+.
+\end{equation}
+The cost of one direction is
+\begin{equation}
+\label{eq:direction-cost}
+\mathcal U=\sum_{\sigma\in\Phi}
+\left(\log(w_0(\sigma)!)-
+ w_0(\sigma)\log(\Omega/g)-
+ A(w_{\rm nom}(\sigma),\sigma)\right),
+\end{equation}
+where $\Omega$ is \texttt{Parameters.bigOmega} and
+$g=g_0g_1$. Equations \eqref{eq:data-prime-sum}
+and \eqref{eq:direction-cost} port \texttt{Data.primeSum},
+\texttt{Data.jetSize}, and \texttt{Data.dirCost}. They show
+where the prime sum enters the height before the
+covolume comparison.
+
+\section{A large set avoiding several equations}
+\label{sec:behrend}
+The thick places must have two properties at once: they
+occupy a substantial fraction of the tops, and they avoid
+relations that would make different terms of the theta
+chain collide. The combinatorial input is
+\texttt{exists\_three\_term\_free} in
+\leanfile{New/Data/DataExist.lean}{DataExist.lean}.
+
+\begin{theorem}[Behrend set in the compact source]
+\label{thm:behrend}
+Let $\varphi:G\to H$ be a homomorphism of commutative
+groups, and let $c,g\in G$. Let $n,M$ be positive
+integers and $L\ge2$ with
+$(LM)^n\le\operatorname{ord}(\varphi(g))$.
+There is a finite set $T\subset c\langle g\rangle$ with
+$|T|\ge M^n/(nM^2)$ such that for every
+$0<i<j\le L$ and $\sigma,\tau,\rho\in T$,
+\[
+\varphi(\tau/\sigma)^j
+ =\varphi(\rho/\sigma)^i
+ \quad\Longrightarrow\quad
+\varphi(\tau/\sigma)=1.
+\]
+\end{theorem}
+\begin{proof}
+Put $B=LM$. Among the $M^n$ vectors of
+$\{0,\ldots,M-1\}^n$, choose a sphere $S$ of fixed
+squared Euclidean norm containing at least
+$M^n/(nM^2)$ vectors: the squared norm has fewer than
+at most $nM^2$ possible values. Encode a vector $v$ by
+\[
+E(v)=\sum_{a=0}^{n-1}v_aB^a,
+\qquad T=\{c g^{E(v)}:v\in S\}.
+\]
+Since $E(v)<B^n\le\operatorname{ord}(\varphi(g))$,
+the map from $S$ to $T$ is injective after applying
+$\varphi$. Thus $|T|=|S|$.
+
+Let $x,y,z\in S$ encode $\sigma,\tau,\rho$.
+Write $a=j-i>0$. The group relation implies
+\[
+\varphi(g)^{jE(y)}
+ =\varphi(g)^{aE(x)+iE(z)}.
+\]
+Each exponent is the base-$B$ encoding of a vector
+whose coordinates lie in $[0,B)$: they are $jy_a$ and
+$ax_a+iz_a$, respectively, and $j\le L$. Both
+exponents are therefore in $[0,B^n)$.
+The order hypothesis makes them equal as integers;
+uniqueness of base-$B$ expansion gives
+$j y=a x+i z$ coordinatewise. Thus $y$ is a convex
+combination of $x$ and $z$ with strictly positive
+coefficients. Since all three vectors lie on one sphere,
+strict convexity of the squared norm forces $x=z=y$.
+In particular $\varphi(\tau/\sigma)=1$.
+\end{proof}
+This specialization of the formal theorem is
+\texttt{exists\_three\_term\_free}
+in \leanfile{New/Data/DataExist.lean}{DataExist.lean}.
+
+\section{The class-group and prime choices}
+\label{sec:class-group-data}
+The class-group step has a short independent proof.
+\begin{proposition}
+\label{prop:class-pigeonhole}
+Let $K$ be a number field with class number $h$.
+For $0\le i\le h$, let $I_i,J_i$ be nonzero prime ideals
+such that $I_iJ_i$ is principal. Then some distinct
+$i,j$ have $I_iJ_j$ principal.
+\end{proposition}
+\begin{proof}
+Two of the $h+1$ classes $[I_i]$ agree. Since
+$[I_j][J_j]=1$, the equality $[I_i]=[I_j]$ gives
+$[I_iJ_j]=[I_jJ_j]=1$.
+\end{proof}
+This is \texttt{exists\_mul\_principal} in
+\leanfile{New/Data/DataExist.lean}{DataExist.lean}.
+In \texttt{exists\_data}, primes $g_0,g_1$ are first
+chosen in separated short windows, each in a congruence
+class forcing the relevant ideal split. The proposition
+crosses two choices to obtain an algebraic integer
+$\pi_g$ with $\pi_g\overline{\pi_g}=g_0g_1$.
+The large Behrend set is then transferred to the group
+of infinite places, giving the thick set.
+
+The record also demands primes in a progression
+$1\pmod{M_\omega^2}$ in every logarithmic window of
+width $\sqrt{\log b}$ in a specified range. This
+supplies the level prime $N$ once its target logarithm
+is known. The source packages the analytic prime-in-
+progression estimate as a prerequisite to
+\texttt{exists\_data}; the present proof of
+Proposition~\ref{prop:class-pigeonhole} does not establish
+that estimate or the full data-existence theorem.
+
 \section{Rows, columns, and theta lifts}
 \label{sec:spaces}
 Columns are algebraic forms on a definite unitary group of rank
@@ -494,6 +1001,110 @@ identification of the rows with the representation to which
 the height and integral-lattice estimates apply is carried by
 the formal development. This manuscript uses the notation
 $\Theta_\vartheta$ only for that specific chain.
+
+\section{The row parameter and its weight gap}
+\label{sec:row-parameter}
+The first indefinite space $Y_0$ has rank $r$.
+The row parameter at an infinite place $v$ has entries
+\begin{equation}
+\label{eq:row-parameter}
+\varsigma_v(i)=
+\begin{cases}
+ k/2-1-i,&i+1<k,\\
+ r^8-w_{i+2-k}(v),&i+1\ge k.
+\end{cases}
+\end{equation}
+The source implements this as \texttt{Data.rowParameter}
+in \leanfile{New/Seesaw/IndexTypes.lean}%
+{IndexTypes.lean}. The first block is the regular
+algebraic part; the later entries are pushed down by
+the large stage weights. The signs of the diagonal
+Hermitian spaces $W_j$ change when the basis number
+crosses $k+j-1$. This is \texttt{Data.signsW}.
+
+The gap is quantitative. The declaration
+\texttt{Data.varsigma\_add\_w\_gap} in
+\leanfile{New/Trace/GoodIdempotent.lean}%
+{GoodIdempotent.lean} says that, according to which
+side of the sign change an index lies on,
+$\varsigma_v(i)+w_j(v)$ is at least $r^8$ or at most
+$-r^8$. The gap prevents weights belonging to
+different stages from being confused in the theta
+and trace calculations. The same file proves
+\texttt{isCuspKernel\_paramW}, which puts the
+row parameter in the cuspidal range required by the
+Poincar\'e and period constructions. The precise
+representation-theoretic proof is in the source; the
+display \eqref{eq:row-parameter} explains why the
+large gap was built into admissibility.
+
+\section{The good projector and the finite group}
+\label{sec:good-projector}
+The finite group is not an abstract collection of
+translations. The source defines
+\begin{equation}
+\label{eq:finite-group}
+G=\prod_{w\in\mathcal W}
+\operatorname{GL}_{r}(\mathbb F_w),
+\end{equation}
+where $\mathcal W$ is a chosen family of places above
+the two primes $g_0,g_1$ and $\mathbb F_w$ is the
+residue field. The principal-level forms carry a
+representation of $G$ by reduction at those places.
+For a prescribed family of ``good'' characteristic
+polynomial tuples $c$, let $e_c$ be the associated
+tuple idempotent. Then
+\begin{equation}
+\label{eq:good-idempotent}
+e_0=\sum_{c\in\mathcal C_{\rm good}}e_c\in\C[G].
+\end{equation}
+These are \texttt{Data.G},
+\texttt{Data.goodTupleFamilies}, and the source's $e_0$
+in \leanfile{New/Seesaw/IndexTypes.lean}%
+{IndexTypes.lean}. A central-projector lemma in
+\leanfile{New/Trace/GoodIdempotent.lean}%
+{GoodIdempotent.lean} proves that $e_0$ is a central
+self-adjoint idempotent. The row space is
+the image of $e_0$ acting on principal-level forms on
+$Y_0$; see \texttt{Data.goodForms} and
+\texttt{Data.rows} in
+\leanfile{New/Trace/GoodIdempotent.lean}%
+{GoodIdempotent.lean}.
+
+The projection does two jobs. In Theorem B, a translate
+of a column reaches the selected row representation
+only after applying $e_0$. In Theorem C, the same
+projector lets the good lift decompose into Hecke
+eigenspaces whose volumes can be compared. The
+reflection-sum lemma for $e_0$ annihilates
+specified unwanted reflection sums, a local reason the
+projector is useful. None of these facts follows from
+idempotence alone: the good-tuple conditions and their
+Hecke compatibility are part of the formal source.
+
+\section{Twists and the chain}
+\label{sec:twist-data}
+A \texttt{Data.TameChar} is a weight-zero character
+of $U(1)$ with tame part supported on a finite set
+$Q$ of places. The set $Q$ is disjoint from its
+complex conjugate and has norm product coprime to
+$gN$. A \texttt{Data.Twist} additionally requires
+the tame part to be nontrivial at every place of $Q$.
+These are exact fields of the structures in
+\leanfile{New/Seesaw/IndexTypes.lean}%
+{IndexTypes.lean}. The chain requires an
+\texttt{MFoldTwist}, so the first $m$ powers of a twist
+have the permitted conductor behavior.
+
+The map $\Theta_\vartheta$ is the composition of the
+$m$ theta lifts at those powers, restricted to the
+rows. Its definition is the source's $\Theta$ in
+\leanfile{New/Rows/RowVolume.lean}{RowVolume.lean}.
+The trivial twist $1$ supplies the archimedean norm
+and covolume bound in Theorem A. The fit twists
+$\vartheta_\iota$ are used only in the lower bound:
+their altered congruences make the ratio of twisted
+and untwisted volumes have a controlled height.
 
 \chapter{Theorem A: short forms}
 \label{ch:short}
@@ -540,11 +1151,68 @@ mathematical output; the source specifies the index through
 \texttt{Data.IndexLe}, including a matrix over each valuation
 ring and a bound on the norm of its determinant.
 
-The scale $q$ is a product of rational prime powers. Its
-archimedean logarithm equals a chosen sum of local gains and
-losses, while its $p$-adic norms encode the same integers with
-opposite signs. The elementary rational construction is proved
-as \texttt{exists\_rat\_log\_eq\_and\_padic\_norm\_eq}.
+\section{The index is an integral lifting condition}
+\label{sec:index-definition}
+Here is the exact shape of that condition. For an
+independent family $y=(y_1,\ldots,y_n)$, the assertion
+\texttt{IndexLe}$(y,\delta)$ means that there are real
+numbers $e_\ell$ indexed by rational primes, with
+\begin{equation}
+\label{eq:index-budget}
+\sum_{\ell\in U}e_\ell\le\delta
+\quad\text{for every finite set of primes }U,
+\end{equation}
+such that the following holds. At every $\ell$-adic
+embedding $\iota$ and every twist $\vartheta$ of conductor
+prime to $\ell$, there is a matrix $u$ over the valuation
+ring $\mathcal O_\iota$ with
+\begin{equation}
+\label{eq:index-matrix}
+|\det u|_\iota\ge e^{-e_\ell},\qquad
+\Theta_\vartheta\!\left(\sum_j u_{ij}y_j\right)
+\text{ integral at }\iota\quad\text{for every }i.
+\end{equation}
+This is \texttt{Data.IndexLe} in
+\leanfile{New/Endgame/ShortAndEnough.lean}%
+{ShortAndEnough.lean}. The definition quantifies over
+all finite sets in \eqref{eq:index-budget}; it does not
+assume in advance that $\sum_\ell e_\ell$ converges.
+The matrix may depend on the embedding and the twist.
+Its determinant, not an entrywise bound, is what later
+costs $2\delta$ in the Gram determinant.
+
+The rational scaling in Theorem~\ref{thm:a} is elementary.
+\begin{proposition}
+\label{prop:rational-scaling}
+Let $T$ be a finite set of rational primes and let
+$g_\ell\in\Z$ vanish outside $T$. There is a positive
+$q\in\Q$ with
+\[
+\log q=\sum_{\ell\in T}g_\ell\log\ell,
+\qquad |q|_p=|p|_p^{g_p}
+\quad\text{for every rational prime }p.
+\]
+\end{proposition}
+\begin{proof}
+Take $q=\prod_{\ell\in T}\ell^{g_\ell}$.
+The real logarithm is additive, and unique factorization
+gives $v_p(q)=g_p$. With $|p|_p=p^{-1}$, the second
+identity follows.
+\end{proof}
+This is \texttt{exists\_rat\_log\_eq\_and\_padic\_norm\_eq}
+in \leanfile{New/Endgame/ShortAndEnough.lean}%
+{ShortAndEnough.lean}. The source chooses
+$g_\ell=\lfloor\mathrm{allowedLoss}(\ell)-
+\mathbf1_{\ell\in\mathcal P_{\rm ns}}
+\mathrm{gain}(\ell)\rfloor$ on the nonsplit primes
+and the level prime. Its real logarithm offsets the
+positive gain term in \eqref{eq:weyl-bound}; its local
+norms shift the integrality condition by the same integer
+with the opposite valuation sign.
+
+% Superseded by Proposition~\ref{prop:rational-scaling} above.
+% The scale q is a product of rational prime powers; its real and
+% p-adic norms encode gains and losses with opposite signs.
 The deeper work in Theorem A lies in the projected Poincar\'e
 series, the seesaw identity, the Weyl norm estimate, and the
 local divisibility of theta lifts. The exact import chain is
@@ -570,6 +1238,58 @@ $B^\Psi_\vartheta$ its definite-space expansion. This is
 Equation~\eqref{eq:seesaw} lets the construction control
 the norm of the row lift through columns, whose local
 divisibility can be estimated.
+
+\section{The finite-cut seesaw induction}
+\label{sec:finite-cut}
+The seesaw identity is not a formal consequence of the
+usual one-step theta correspondence. At stage $j$ the
+source unfolds a period on an indefinite space into a
+period on a definite space. The unfolding initially
+involves a quotient by a compact open subgroup; the proof
+must replace it by a finite sum whose denominators remain
+controlled at every prime away from the twist conductor.
+
+For a stage $j$ and a twist $\vartheta$, let
+$\mathcal J_j(\vartheta)$ denote the level subgroup in
+\texttt{Data.levelY}. The declaration
+\texttt{Data.exists\_stage\_cut} in
+\leanfile{New/Seesaw/SeesawTheorem.lean}%
+{SeesawTheorem.lean} supplies a compact open $A_j$
+containing the column level and a finite set
+$T_j(\vartheta)$ of cosets modulo
+$\mathcal J_j(\vartheta)$. It is stable under the
+relevant Bessel subgroup inside $A_j$. Representatives
+are integral away from the conductor of $\vartheta$;
+at stage zero they lie in the chosen level. The
+covering multiplicity of each coset that contributes
+to the unfolded period divides a power of the conductor.
+Consequently the reciprocals of those multiplicities
+have no denominator away from that conductor.
+
+The next declaration,
+\texttt{Data.exists\_isAdmissibleComb\_unfolding},
+builds the finite sums by downward induction on $j$.
+Its induction variable is an admissible linear combination
+of values of a form on the finite coset set. At the
+last stage, the integral is evaluated by a finite
+unfolding. Moving from $j+1$ to $j$ replaces one period
+by a sum over $T_j(\vartheta)$ weighted by inverse
+covering multiplicities. The support and integrality
+properties from \texttt{exists\_stage\_cut} show that
+the new combination remains admissible. At $j=0$ the
+period is the Poincar\'e series pairing. The same
+induction tracks the level action and a scalar independent
+of the input column.
+
+Finally \texttt{Data.seesaw} chooses a nonzero $c$ and
+a good datum $\Psi$ from that invariant combination.
+This gives \eqref{eq:seesaw} for every ramified column
+and every tame twist. The paragraph above is the
+construction route in the pinned source. The existence
+of the cuts, the period identities, and the invariant
+combination are used as formal results here; a full
+conventional proof would need their local measure and
+denominator normalizations.
 
 The archimedean estimate
 \path{weylNormSq_Bmu_le} in
@@ -608,6 +1328,100 @@ the level prime separately. Both cases are part of the
 stated theorem, and neither follows merely from
 \eqref{eq:seesaw}.
 
+\section{Marked Hecke operators and local divisibility}
+\label{sec:marked-hecke}
+The local work is concentrated at a small nonsplit prime
+$p<x_1$ which can pair two top places. The set $\Lambda$
+of marked places above $p$ records where a Hecke operator
+is applied. If $Y_\Lambda$ is the product of those
+operators, the source's
+\texttt{Data.IsMarked.hasType\_prod\_markOperator\_pow}
+shows that $Y_\Lambda^m$ preserves the integral-column
+lattice and that its image, after adjoining a prescribed
+$p$-power multiple of all columns, has index dividing
+\begin{equation}
+\label{eq:marked-index}
+p^{3\,\mathrm{loss}(p)\dim(\mathrm{Column})}.
+\end{equation}
+The exponent is a cost of making the columns satisfy the
+divisibility condition; it does not enter the archimedean
+norm of each selected column directly.
+
+Under the stronger \texttt{IsFullMark} condition, the
+source proves that for an integral column $v$ the image
+$B^\Psi_\vartheta(Y_\Lambda^m v)$ has $p$-adic
+valuation at least
+\begin{equation}
+\label{eq:mark-gain}
+\mathrm{gain}(p)-2\,\mathrm{loss}(p).
+\end{equation}
+The local inequality is
+\path{Data.IsGoodDatum.gaugeLe_Bmu_of_isMarked}.
+It is in \leanfile{New/Columns/LocalStatement.lean}%
+{LocalStatement.lean}. A second route treats collisions:
+without a full mark, \texttt{gaugeLe\_collisionSum}
+allows an extra $m\,\mathrm{collisionSum}(p,\varnothing)$
+loss, and \texttt{gaugeLe\_pow\_jetCeil\_smul}
+repairs it by multiplying the input by
+$p^{\mathrm{jetCeil}(p)}$. The local index theorem combines
+these routes and handles the exceptional level prime
+separately. Its final output is the submodule and integer
+$\beta$ described after \eqref{eq:a-index}, namely
+\path{Data.exists_indexDvd_Bmu_divisible}.
+
+The proof of \eqref{eq:mark-gain} has a useful accounting
+identity. At each of the $m$ stages, moving the marked
+operator through the theta kernel contributes a power
+of $p$ from a local Hecke relation. A \texttt{liftLoss}
+term measures the possible loss from the low-column
+and jet exponents. Summing over stages and marked places
+gives the initial gauge exponent in
+\texttt{gaugeLe\_markOperator\_pow}. The full-mark
+condition bounds that sum by the two losses in
+\eqref{eq:mark-gain}. The Hecke transfer itself is
+\texttt{exists\_hecke\_transfer}; it writes a large Hecke
+operator after a lift as an integral combination of
+smaller ones. Its representation and local-kernel
+identities are formal inputs to this account.
+
+\section{The archimedean estimate as a chain bound}
+\label{sec:arch-chain}
+The source proves \eqref{eq:weyl-bound} by expanding
+$B^\Psi_1\phi$ into finitely many chains of theta
+kernels. The datum $\Psi$ has controlled support and
+denominators because it came from the finite-cut
+construction. A jet-norm estimate bounds each stage;
+the sum of the main jet terms is
+\texttt{Data.heightPerRow}. The small nonsplit primes
+contribute twice their gain to the logarithm of the
+squared norm. The remaining combinatorial and rounding
+loss is $\mathcal B$. This is the route through
+\texttt{exists\_chain\_eq\_sum} and
+\texttt{weylNormSq\_Bmu\_le} in
+\leanfile{New/Columns/LocalStatement.lean}%
+{LocalStatement.lean}.
+
+For the columns selected in Theorem A, the initial
+conjugate squared norm is bounded by
+$\exp(2\log q+\mathcal B)$. Inserting this in
+\eqref{eq:weyl-bound} and using
+\eqref{eq:height-per-row} gives
+\[
+\log\|\Theta_1(B_s\phi)\|_\sigma^2
+\le h_0-mR+3\mathcal B
+ +2\sum_{p\in\mathcal P_{\rm ns}}
+      \mathrm{gain}(p)\log p+2\log q.
+\]
+The exponent of each prime in $q$ is the floor of its
+allowed loss minus its gain. Hence the last two terms
+are bounded by the sum of allowed local losses, plus
+rounding. The source's
+\texttt{sum\_allowedLoss\_mul\_log\_le} and scale bounds
+absorb this in $L-3\mathcal B$, yielding
+\eqref{eq:short-bound}. This is an accounting derivation
+conditional on the archimedean and local source lemmas;
+it does not prove their analytic estimates.
+
 \section{Why the level matters}
 Our notation $h_0=m k\mathcal U$ denotes the source's
 \texttt{Data.mainHeight}; $\mathcal U$ is the cost of one
@@ -623,6 +1437,62 @@ remainder $-mR$ is therefore visible in the short-form
 estimate. Choosing $N$ after the relevant scales would not
 give this cancellation automatically; the short level window
 is part of admissibility.
+
+Write $\bar w=f^{-1}\sum_\sigma\log w_{\rm nom}(\sigma)$
+and $G=\log(g\,\mathrm{rd}_E/(2\pi))$, where
+$\mathrm{rd}_E$ is the root discriminant. The source's
+main ask is
+\begin{equation}
+\label{eq:main-ask}
+A_{\rm main}=a(\log a-1-\operatorname{CS}(d)-\bar w).
+\end{equation}
+Its level target is
+\begin{equation}
+\label{eq:level-target}
+\log N\ge m(\bar w+G)-G-\tfrac{15}{2}\log b.
+\end{equation}
+The difference between \texttt{jetSize}$(a)$ and
+$A_{\rm main}$ satisfies
+\begin{equation}
+\label{eq:jet-excess}
+\mathrm{jetSize}(a)-A_{\rm main}
+\le a(\bar w+G)+1+\tfrac12\log a.
+\end{equation}
+The proof of \eqref{eq:jet-excess} substitutes the
+definition of the period $\Omega$ and applies the
+upper Stirling bound
+$\log(a!)\le a\log a-a+1+\tfrac12\log a$.
+
+\begin{proposition}
+\label{prop:level-cancellation}
+Let $D$ be admissible data. Assume the level bound
+\eqref{eq:level-target}, the jet bound
+\eqref{eq:jet-excess}, and the source's scale estimate
+\[
+\#\mathrm{tops}\left(m(1+\tfrac12\log a)
+ +a(G+\tfrac{15}{2}\log b)\right)\le\mathcal B.
+\]
+Then $\mathrm{heightPerRow}\le h_0-mR+\mathcal B$.
+\end{proposition}
+\begin{proof}
+Unfolding the height and the definition of the remainder
+in \texttt{ShortAndEnough.lean} gives the exact identity
+\[
+\mathrm{heightPerRow}=h_0-mR+
+\#\mathrm{tops}\bigl(m(\mathrm{jetSize}(a)-A_{\rm main})
+ -a\log N\bigr).
+\]
+Insert \eqref{eq:jet-excess} and
+\eqref{eq:level-target}. The $ma(\bar w+G)$ terms
+cancel. The displayed scale estimate bounds what remains
+by $\mathcal B$.
+\end{proof}
+This is the mathematical calculation in
+\texttt{Data.heightPerRow\_le} of
+\leanfile{New/Endgame/ShortAndEnough.lean}%
+{ShortAndEnough.lean}. The existence of $N$ in the
+specified short interval and the scale estimate are
+separate parts of the admissible-data construction.
 
 \chapter{Theorem B: enough forms}
 \label{ch:enough}
@@ -664,22 +1534,110 @@ norm bound \eqref{eq:short-bound} yields the covolume bound
 \eqref{eq:upper-covolume}. This is the construction of the
 family used in Chapter~\ref{ch:assembly}.
 
-\section{A finite-dimensional spreading lemma}
-\label{sec:spread}
-The quantitative linear algebra is separated from the
-automorphic filling assertion. Let $V,W$ be finite-dimensional
-complex vector spaces and $B_s:V\to W$ a family of maps.
-For $\eta>0$, call the family spread if for every subspace
-$F\subseteq W$ some $s$ satisfies
+\section{Why the Poincar\'e translates spread}
+\label{sec:filling}
+The map before the final rational scaling has the form
+\[
+P_s=\operatorname{pr}_{e_0}\,\rho(s)
+   \mathcal P\,\iota_{\rm ram},\qquad s\in G.
+\]
+Here $\mathcal P$ is the Poincar\'e series, $\rho$ is
+the finite-level group action, $e_0$ is the central
+idempotent selecting good rows, and $\iota_{\rm ram}$
+is the ramifying operator on columns. The source
+normalizes the projection by $|G|$. Its theorem
+\texttt{Data.ramifiedColumns\_fill\_rows} states the
+spread condition \eqref{eq:spread} for these maps with
+$\eta=b^{-2}$; see
+\leanfile{New/Filling/FillingTheorem.lean}%
+{FillingTheorem.lean}. This is the deep part of Theorem B.
+
+The proof begins with a Petersson pairing for the
+Poincar\'e series. Matrix coefficients of translates
+of columns become the \texttt{amplitudeSum} of a
+finite-level model. The source estimates its second
+moment. The main energy is concentrated on a Bessel
+subgroup; \texttt{energy\_compl\_besselS\_le}
+bounds the complementary energy by $b^{-12}$ times
+the Bessel energy. The fixing-set estimate
+\texttt{energy\_fixingSet\_le} controls the mass of
+terms with unwanted stabilizers. These estimates are
+proved in \leanfile{New/Filling/Moments.lean}%
+{Moments.lean}; they depend on the admissible data's
+three-term-free thick set and the rank gaps.
+
+The linear-algebra conversion is worth making explicit.
+For a map $P:\C^n\to H$, a finite family
+$v_i=Pe_i$, and an orthonormal basis $b$ of $H$, set
+\[
+\mathcal D(v)=\sum_i\overline{v_i}^{\,b}\otimes v_i.
+\]
+The source proves
+\begin{equation}
+\label{eq:dyad-pairing}
+\langle\mathcal D(v),\mathcal D(w)\rangle
+ =\sum_{i,j}|\langle w_j,v_i\rangle|^2.
+\end{equation}
+For a subspace $A\subset H$, choosing $w$ as an
+orthonormal basis of $A$ makes the right side the
+Hilbert--Schmidt square of the projection of $P$ to
+$A$. This is \texttt{inner\_dyadSum} in
+\leanfile{New/Heights/OneDeterminant.lean}%
+{OneDeterminant.lean}. A trace comparison in
+\texttt{finrank\_sub\_le\_re\_inner\_dyadSum}
+then turns closeness of $P^*P$ to the identity and a
+small bad component into a lower bound for the image
+outside any prescribed subspace. Averaging over $s\in G$
+shows that at least one translate has the required
+rank outside $A$.
+
+For finite-dimensional $V,W$ with $W\ne0$ and maps
+$B_s:V\to W$, the source calls the family
+$\eta$-\emph{spread} if, for every subspace $F\subseteq W$,
+some $s$ satisfies
 \begin{equation}
 \label{eq:spread}
 \dim B_s^{-1}F\le
 \left(\frac{1+\dim F/\dim W}{2}+\eta\right)\dim V.
 \end{equation}
-This is the source predicate \texttt{IsSpread} in
+This is \texttt{IsSpread} in
 \leanfile{New/Heights/OneDeterminant.lean}%
-{OneDeterminant.lean}. It measures how much of a new
-image can lie in a subspace already reached.
+{OneDeterminant.lean}.
+
+The abstract output of the second-moment argument is
+\path{Fits.exists_translate_finrank_comap_le}
+in \texttt{Moments.lean}. Before ramification it yields
+an \texttt{IsSpread} error $(19/2)b^{-4}$. The final
+ramifying operator and the controlled bad share consume
+part of this margin. The scale inequalities enlarge the
+error to $b^{-2}$, giving
+\texttt{ramifiedColumns\_fill\_rows}. These constants
+are not obtained from the elementary greedy lemma below;
+their proof depends on the automorphic Petersson and
+finite-level energy identities. This manuscript takes
+those identities at their formal source locators.
+
+\begin{proposition}
+\label{prop:rows-nonzero}
+Let $V$ be a nonzero finite-dimensional complex vector
+space, let $W$ be finite-dimensional, and suppose a
+family $B_s:V\to W$ is spread with $0<\eta<1/2$.
+Then $W$ is nonzero.
+\end{proposition}
+\begin{proof}
+If $W=0$, the only subspace is $F=0$. The spread
+inequality says $\dim V\le(1/2+\eta)\dim V$, contrary
+to $\dim V>0$.
+\end{proof}
+The source uses this argument as
+\texttt{Data.finrank\_rows\_ne\_zero}.
+
+\section{A finite-dimensional spreading lemma}
+\label{sec:spread}
+The quantitative linear algebra is separated from the
+automorphic filling assertion. Inequality~\eqref{eq:spread}
+measures how much of a new image can lie in a subspace
+already reached.
 
 \begin{theorem}
 \label{thm:few-translates}
@@ -718,7 +1676,7 @@ After at most
 k=\left\lceil\frac{4D}{d}\log\frac1{4\eta}\right\rceil
 \]
 steps, either the construction has stopped or
-$q_k\le D e^{-kd/(4D)}\le4\eta D$. Moreover
+$q_k\le D e^{-kd/(4D)}\le4\eta D$. Also
 \[
 kd\le4D\log\frac1{4\eta}+d
   <4D\left(\log\frac1{4\eta}+1\right)
@@ -762,6 +1720,71 @@ D_{\rm row}(h_0-3L)\le V+2\delta.
 The formal proof is \texttt{Data.integral\_forms\_long} in
 \leanfile{New/Endgame/LongForms.lean}{LongForms.lean}.
 
+\section{The height of a family indexed by primes}
+\label{sec:height-definition}
+The height in Theorem C is not the usual logarithmic
+height of a single algebraic number. A family has one
+complex value $z_\iota$ for every rational prime $\ell$
+and every field isomorphism
+$\iota:\C\simeq\overline{\Q}_\ell$.
+The definition \texttt{HeightLe} in
+\leanfile{New/Heights/Heights.lean}{Heights.lean}
+says that $\operatorname{HeightLe}(c,z)$ holds when there
+are a nonzero $H\in\C$, a real $\alpha$, and real
+numbers $e_\ell$ such that
+\begin{align}
+\label{eq:height-arch}
+|\sigma H|&\le e^\alpha
+       &&(\sigma\in\operatorname{Aut}\C),\\
+\label{eq:height-finite}
+|\iota(H z_\iota)|_\ell&\le e^{e_\ell}
+       &&(\iota:\C\simeq\overline\Q_\ell),
+\end{align}
+and, for every sufficiently large cutoff $M$,
+\begin{equation}
+\label{eq:height-budget}
+\alpha+\sum_{\substack{\ell<M\\\ell\text{ prime}}}
+ e_\ell\le c.
+\end{equation}
+The common factor $H$ clears denominators. It can be
+chosen differently for different families, but not
+separately for each $\ell$. This distinction is needed
+when multiplying height bounds.
+
+\begin{proposition}
+\label{prop:height-product}
+Let $z,z'$ be families indexed by prime-adic
+isomorphisms. If $\operatorname{HeightLe}(c,z)$ and
+$\operatorname{HeightLe}(c',z')$, then
+$\operatorname{HeightLe}(c+c',zz')$.
+\end{proposition}
+\begin{proof}
+Multiply the two common factors $H,H'$. Add their
+archimedean exponents and add the local exponents
+$e_\ell,e'_\ell$. The inequalities
+\eqref{eq:height-arch}--\eqref{eq:height-budget}
+multiply and add respectively, giving the asserted
+budget for every sufficiently large cutoff.
+\end{proof}
+This is \texttt{HeightLe.mul}. Iteration gives the
+product and power rules used in the volume factorization.
+
+The terminal principle is \texttt{HeightLe.nonneg}:
+\begin{equation}
+\label{eq:height-one}
+\operatorname{HeightLe}(c,1)\quad\Longrightarrow\quad c\ge0.
+\end{equation}
+For a witness $H$, the source first obtains the
+algebraicity needed to pass to the number field $\Q(H)$.
+It then applies the product formula to its norm, comparing
+the average archimedean logarithm with the $\ell$-adic
+logarithms. The finite-cutoff form
+\eqref{eq:height-budget} avoids assuming absolute
+convergence of $\sum e_\ell$. The algebraicity step and
+normalization of local norms are part of the formal proof
+in \texttt{Heights.lean}; this manuscript uses
+\eqref{eq:height-one} as an imported result.
+
 \section{Volume ratios and heights}
 The compact proof attaches a volume $\mathfrak z(\vartheta)$
 to a twist of the row representation. It factors into a scalar
@@ -773,6 +1796,47 @@ twist $\vartheta_\iota$. Its congruence properties are
 \texttt{IsFitFamily}; existence is
 \texttt{exists\_isFitFamily} in
 \leanfile{New/Selmer/FitTwistsExist.lean}{FitTwistsExist.lean}.
+
+The fit family is chosen \emph{separately} at each
+$\ell$-adic embedding. There need not be a single global
+twist good at every prime. The declaration
+\texttt{exists\_mFoldTwist\_selmerLengthLe} in
+\leanfile{New/Selmer/TwistForRows.lean}%
+{TwistForRows.lean} produces a twist whose first $m$
+powers have controlled Selmer lengths for the finitely
+many row Galois representations under consideration.
+It also bounds the valuations of ratios attached to
+ramified pairs. The twisting characters are chosen
+anticyclotomically, with tame generators at auxiliary
+places and a bounded sum of local deviations from $1$.
+The source's \texttt{IsAuxTwist} records those conditions.
+
+The denominator theorem
+\path{denominatorLe_rowBudget} turns a short Selmer
+length into
+an $\ell$-adic bound for projection onto the lift image.
+Its source is
+\leanfile{New/Selmer/DenominatorBound.lean}%
+{DenominatorBound.lean}.
+The statement requires a cut spanned by forms whose
+Galois representations satisfy the row condition and
+whose twisted Selmer groups have the specified finite
+length. It gives a denominator cost
+$r\,\mathrm{rowBudget}(D,\ell)\log\ell$.
+The construction of \texttt{exists\_isFitFamily}
+then assembles these choices and proves
+\begin{equation}
+\label{eq:fit-budget}
+\sum_{\ell\in U}
+ \mathrm{rowBudget}(D,\ell)\log\ell\le B_0
+\quad\text{for every finite set of primes }U,
+\end{equation}
+with a separate $x^{999}$ budget for crude scalar
+factors. The formal proof uses Galois representations,
+Selmer groups, patching, and a factorization bound.
+Those modules are the deepest arithmetic inputs to
+Theorem C. This manuscript records their exact role
+and does not derive the Selmer bound conventionally.
 
 The proof uses two height bounds. The first controls the
 squared ratio $\mathfrak z(1)^2/
@@ -830,6 +1894,96 @@ the remaining error in \eqref{eq:ratio-one}. This is how
 the row chain repays the cost of the idle directions in the
 height calculation.
 
+\section{Comparison forms and compressed Gram matrices}
+\label{sec:compressed-gram}
+The bound \eqref{eq:per-lift-height} is proved one lift at
+a time. Fix $j$ and a twist $\vartheta$. Write
+$u_\vartheta$ for the $j$th good theta lift and
+$L_\vartheta=\operatorname{im}u_\vartheta$.
+The declaration \texttt{exists\_comparison\_forms} in
+\leanfile{New/Rows/ComparisonForms.lean}%
+{ComparisonForms.lean} supplies a table space, a
+surjection $A$ from tables onto good forms, comparison
+maps $\Xi_\vartheta$ into the lift's target, and nonzero
+scalars $\gamma_\vartheta$ satisfying
+\begin{equation}
+\label{eq:comparison-adjoint}
+u_\vartheta^*\Xi_\vartheta
+ =\gamma_\vartheta A.
+\end{equation}
+The squared ratio
+$|\gamma_\vartheta/\gamma_1|^2$ is a ratio of the
+source's \texttt{heckeValueProd}. The comparison maps
+have an archimedean squared-norm bound at the trivial
+twist. At primes not dividing the conductor, they take
+integral tables to integral forms. Their images satisfy
+the testing condition needed to bound the determinant
+on the good-lift subspace.
+
+For a nonzero scalar $h$, a map $\Xi:T\to V$, and a
+subspace $L\subset V$, define the compressed Gram
+operator on $L$ by
+\begin{equation}
+\label{eq:compressed-gram}
+C_L=h\,\operatorname{pr}_L\Xi\Xi^*|_L.
+\end{equation}
+This operator gathers the table comparisons into one
+determinant. Its elementary identity is the following.
+\begin{proposition}
+\label{prop:compressed-det}
+Let $u:U\to V$ be an injective map of finite-dimensional
+complex inner-product spaces, with $L=\operatorname{im}u$.
+For $C_L$ as in \eqref{eq:compressed-gram},
+\[
+\operatorname{vol}(u)^2\det C_L
+ =h^{\dim L}\operatorname{vol}(\Xi^*u)^2,
+\]
+where $\operatorname{vol}(v)^2=\det(v^*v)$.
+\end{proposition}
+\begin{proof}
+Choose orthonormal bases of $U$ and $L$. The matrix
+of $u:U\to L$ is invertible, say $U_0$. The matrix
+of $C_L$ is $hXX^*$, where $X$ is the matrix of
+$\operatorname{pr}_L\Xi$. Hence the left side is
+$|\det U_0|^2h^{\dim L}\det(XX^*)$. The Gram matrix
+of $\Xi^*u$ is $U_0^*XX^*U_0$, whose determinant is
+the same expression without $h^{\dim L}$.
+\end{proof}
+This is \texttt{det\_compressedGramOp} in
+\leanfile{New/Rows/LiftVolumeHeight.lean}%
+{LiftVolumeHeight.lean}. Equation
+\eqref{eq:comparison-adjoint} replaces
+$\Xi_\vartheta^*u_\vartheta$ by
+$\overline{\gamma_\vartheta}A^*$, so the dependence
+on the twist is concentrated in $\gamma_\vartheta$
+and $\det C_{L_\vartheta}$.
+
+The same file bounds the determinant at complex
+embeddings using the size of $\Xi_1$; its declaration
+is \path{norm_det_compressedGramOp_arch_le}.
+At finite places, integrality and the projection
+denominator bound give
+\path{norm_det_compressedGramOp_padic_le}.
+In the local bound, if the denominator
+parameter is $\beta$, then
+\begin{equation}
+\label{eq:compressed-local}
+|\det C_{L_\vartheta}|_\ell
+ \le\exp(\dim L_\vartheta\, r\beta).
+\end{equation}
+The archimedean counterpart uses the norm bound for
+comparison forms and a positivity argument on the
+eigenvalues of $C_{L_1}$. The fit-twist budget
+\eqref{eq:fit-budget} sums the local exponents.
+The Hecke-value ratio contributes a separate height
+bound in \texttt{heightLe\_inv\_heckeValueProd\_div}
+of \leanfile{New/Rows/HeckeValueHeight.lean}%
+{HeckeValueHeight.lean}. These estimates, inserted in
+Proposition~\ref{prop:compressed-det}, give
+\eqref{eq:per-lift-height}. The source proves all
+integrality, testing, and eigenvalue hypotheses; the
+determinant identity alone does not supply them.
+
 \section{The product-formula comparison}
 Multiply the square of the ratio in
 \eqref{eq:ratio-two} by the ratio in
@@ -839,6 +1993,36 @@ cannot have a negative sum. After absorbing
 $D_{\rm row}b$ into the allowed error, the source obtains
 \eqref{eq:lower-covolume}. This is the last bound needed
 for Proposition~\ref{prop:comparison}.
+
+\begin{proposition}
+\label{prop:height-comparison}
+Let $D$ be admissible data, and suppose the height
+bounds \eqref{eq:ratio-one} and \eqref{eq:ratio-two}
+hold for a fit family. If $b\le L$, then
+$D_{\rm row}(h_0-3L)\le V+2\delta$.
+\end{proposition}
+\begin{proof}
+For each $\iota$, put
+$A_\iota=\mathfrak z(\vartheta_\iota)/\mathfrak z(1)$
+and $B_\iota=\mathfrak z(1)^2/
+\mathfrak z(\vartheta_\iota)^2$. The volumes are nonzero
+by \texttt{volume\_iota\_eq\_prod\_liftVolume}, and
+$A_\iota^2B_\iota=1$. Proposition~\ref{prop:height-product}
+and the power rule give
+\[
+\operatorname{HeightLe}\!\left(
+  2(V+2\delta+D_{\rm row}b)
+   +2D_{\rm row}(2L-h_0),1\right).
+\]
+By \eqref{eq:height-one}, the first argument is
+nonnegative. Dividing by $2$ and rearranging gives
+$D_{\rm row}(h_0-2L-b)\le V+2\delta$.
+Finally $b\le L$ gives the claim.
+\end{proof}
+This calculation is the last part of
+\texttt{Data.integral\_forms\_long}. The hypothesis
+$b\le L$ is one of the source's explicit scale
+comparisons, discharged by \texttt{D.le\_of\_hasLogBound}.
 
 The product formula is the short final step; the substantive
 dependencies are the fit twists, the factorization of volumes,
@@ -876,6 +2060,58 @@ complex and finite-place estimates gives the abstract
 bound $V+2\delta+k g$ of \texttt{one\_determinant},
 where $g$ bounds the scalar height.
 
+\begin{proposition}[Abstract one-determinant bound]
+\label{prop:one-determinant}
+Let $W$ be a $D$-dimensional complex vector space with
+basis $y_1,\ldots,y_D$. Let $u_0$ be an injective lift,
+and let $u_\iota$ be a lift for each prime-adic
+isomorphism $\iota$. Assume every complex conjugate of
+$\det\operatorname{Gram}(u_0y)$ has modulus at most
+$e^\alpha$. At each prime $\ell$, suppose there is a
+real $e_\ell$ and, for every $\iota$ above $\ell$,
+matrices recombining $u_\iota y$ into vectors with
+integral pairings. Suppose their determinants have
+norm at least $e^{-e_\ell}|\gamma_\iota|_\ell^k$
+for a nonzero scalar family $\gamma_\iota$, and that
+$\sum_{\ell\in U}e_\ell\le\delta$ for every finite
+set of primes $U$. If
+$\operatorname{HeightLe}(g,|\gamma|^{-2})$, then
+\[
+\operatorname{HeightLe}\!\left(\alpha+2\delta+kg,
+\frac{\operatorname{vol}(u_\iota)^2}
+     {\operatorname{vol}(u_0)^2}\right).
+\]
+\end{proposition}
+\begin{proof}
+At an $\ell$-adic embedding, pair each recombined
+vector with the corresponding recombination obtained
+after complex conjugation. The pairing hypothesis
+makes the resulting Gram matrix integral, so the
+$\ell$-adic norm of its determinant is at most one.
+The determinant transformation law contributes one
+factor from each recombination matrix. Their lower
+bounds give a local upper bound
+\[
+\left|\det\operatorname{Gram}(u_\iota y)\right|_\ell
+ \le e^{2e_\ell}|\gamma_\iota|_\ell^{-2k}.
+\]
+The untwisted Gram determinant is nonzero by
+injectivity. Use it as part of the common clearing
+factor in \texttt{HeightLe}. The complex estimate
+contributes $\alpha$, the finite determinants contribute
+$2e_\ell$, and the factor $|\gamma|^{-2k}$
+contributes $kg$ by the power rule. The finite-set
+bound gives total cost at most
+$\alpha+2\delta+kg$.
+\end{proof}
+The formal declaration is \path{one_determinant} in
+\leanfile{New/Heights/OneDeterminant.lean}%
+{OneDeterminant.lean}. Its source type specifies the
+integral lattices for both $\iota$ and its conjugate,
+the matrix entries, and the exact pairing. The
+proposition records the determinant calculation after
+those local hypotheses have been established.
+
 The independent rows from Theorems A and B need not be a
 full basis. The result \texttt{Data.crude\_rows} in
 \leanfile{New/Exchange/CrudeRows.lean}{CrudeRows.lean}
@@ -889,6 +2125,55 @@ absorbs the completion cost into $D_{\rm row}b$. The
 last absorption uses the admissible scale inequalities;
 it is a distinct quantitative step from the determinant
 identity itself.
+
+\section{Completing the basis with crude rows}
+\label{sec:crude-rows}
+The theorem \texttt{Data.crude\_rows} has more content
+than mere spanning. It supplies a nonzero scalar family
+$c(\vartheta)$ with a controlled square cost and a
+spanning set of rows $y$ for which, whenever $\ell$ does
+not divide the twist conductor,
+\begin{equation}
+\label{eq:crude-integral}
+\frac{c(\vartheta)}{c(1)}
+\,\iota_\vartheta y
+\quad\text{is integral at every }\ell\text{-adic embedding}.
+\end{equation}
+Every conjugate of the untwisted lift has pointwise
+squared norm at most $\exp(x_1^2b^2)$. Both properties
+are in \leanfile{New/Exchange/CrudeRows.lean}%
+{CrudeRows.lean}, declaration \texttt{Data.crude\_rows}.
+
+The construction begins with a grid period for a form
+at the far end of the theta chain. The declaration
+\texttt{exists\_isTidy\_integral\_eq\_gridPeriod}
+gives tidy finite data of order $4m$ and expresses a
+pairing with the lifted form as a scalar multiple of
+that period. The route theorem
+\texttt{gridPeriod\_climb} carries the identity through
+the $m$ stages. Its scalar factors have square cost
+$2j^2$ through stage $j$; at $j=m$ this explains the
+$2m^2$ cost in \texttt{crude\_rows}.
+The separate declaration
+\texttt{exists\_mul\_endPeriod\_mem\_embValRing}
+clears the endpoint denominator by an integer no larger
+than $\exp(x^{99}b^2)$. Finally a surjection from
+grid-level forms and a dual-pairing argument show that
+the resulting rows span. The source proves these period
+and duality statements; the present description does not
+replace their proofs.
+
+There is a simple numerical reason that the coarse bound
+is enough. Theorem B leaves at most
+$4D_{\rm row}/b^2$ basis directions unfilled.
+The logarithm of the squared norm of each crude row is
+at most $x_1^2b^2$. Their total direct contribution is
+therefore at most $4D_{\rm row}x_1^2$.
+The hierarchy $x_1^{10^6}\le b$ makes this much smaller
+than $D_{\rm row}b$. The actual source estimate also
+absorbs scalar costs and determinant cross terms; its
+final statement is \texttt{heightLe\_volume\_rows},
+not the direct norm estimate alone.
 
 \chapter{Dependencies and verification boundary}
 \label{ch:boundary}
@@ -971,8 +2256,8 @@ the earlier book's teaching architecture, and the verification
 record cited above. It did not run Lean, inspect every one of
 the compact source files, or independently referee the deep
 mathematics. Its original contribution is expository text,
-the algebraic comparison in Proposition~\ref{prop:comparison},
-and the source map. These require human review before they are
+elementary deductions from the source interfaces, and the
+source map. These require human review before they are
 treated as a faithful account of the complete argument.
 
 The run plan, exact selected sources, and source boundaries are
